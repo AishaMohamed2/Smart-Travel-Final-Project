@@ -17,6 +17,9 @@ import os
 
 load_dotenv()
 
+# Set the custom user model
+AUTH_USER_MODEL = 'api.CustomUser'  # Add this line
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -40,6 +43,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
 }
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
@@ -97,10 +101,15 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'smarttraveldatabase',  
+        'USER': 'postgres',  
+        'PASSWORD': 'Queen2016.',  
+        'HOST': 'localhost',  
+        'PORT': '5432',  
     }
 }
+
 
 
 # Password validation

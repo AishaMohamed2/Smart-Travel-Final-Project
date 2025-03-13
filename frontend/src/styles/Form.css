@@ -63,26 +63,7 @@
   background-color: #1e293b;
 }
 
-/* Google Sign-in Button */
-.google-button {
-  width: 100%;
-  padding: 12px;
-  background-color: white;
-  color: black;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 10px;
-}
 
-.google-button:hover {
-  background-color: #f1f1f1;
-}
 
 /* Links */
 .form-links {
