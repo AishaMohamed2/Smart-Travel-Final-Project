@@ -1,26 +1,24 @@
 from rest_framework import serializers
 from .models import Note, CustomUser
 
-# User Serializer (updated for CustomUser model)
+# Serializer for the CustomUser model
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomUser  # Use the custom user model here
-        fields = ["id", "email", "password"]
-        extra_kwargs = {"password": {"write_only": True}}
+        model = CustomUser
+        fields = ["id", "email", "password", "first_name", "last_name"]  # Include first_name and last_name
+        extra_kwargs = {"password": {"write_only": True}}  # Prevent password from being exposed in API responses
 
     def create(self, validated_data):
-        # You don't need to call `create_user` since `CustomUserManager` will handle it
-        password = validated_data.pop("password", None)
-        user = CustomUser(**validated_data)
+        password = validated_data.pop("password", None)  # Extract password from data
+        user = CustomUser(**validated_data)  # Create user instance without saving yet
         if password:
-            user.set_password(password)  # Make sure to hash the password
-        user.save()
+            user.set_password(password)  # Hash the password before saving
+        user.save()  # Save the user instance to the database
         return user
 
-
-# Note Serializer
+# Serializer for the Note model
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
         fields = ["id", "title", "content", "created_at", "author"]
-        extra_kwargs = {"author": {"read_only": True}}
+        extra_kwargs = {"author": {"read_only": True}}  # Prevent clients from modifying the author field

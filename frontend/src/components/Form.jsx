@@ -6,30 +6,42 @@ import "../styles/Form.css";
 import LoadingIndicator from "./LoadingIndicator";
 
 function Form({ route, method }) {
+    // State to manage form inputs
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const navigate = useNavigate(); 
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [loading, setLoading] = useState(false); // Loading state for API requests
 
+    const navigate = useNavigate(); // Hook to programmatically navigate users
+
+    // Determine form title based on method
     const name = method === "login" ? "Sign In" : "Sign Up";
 
     const handleSubmit = async (e) => {
-        setLoading(true);
-        e.preventDefault();
+        setLoading(true); // Show loading indicator
+        e.preventDefault(); // Prevent default form submission behavior
 
         try {
-            const res = await api.post(route, { email, password });
+            // Prepare data payload based on method (login/register)
+            const data = method === "login"
+                ? { email, password }
+                : { email, password, first_name: firstName, last_name: lastName };
+
+            const res = await api.post(route, data); // Send request to API
+            
             if (method === "login") {
+                // Store authentication tokens for logged-in users
                 localStorage.setItem(ACCESS_TOKEN, res.data.access);
                 localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-                navigate("/");
+                navigate("/"); // Redirect to home after login
             } else {
-                navigate("/login");
+                navigate("/login"); // Redirect to login after successful registration
             }
         } catch (error) {
-            alert(error);
+            alert(error); // Show error alert if request fails
         } finally {
-            setLoading(false);
+            setLoading(false); // Hide loading indicator
         }
     };
 
@@ -41,6 +53,25 @@ function Form({ route, method }) {
                     <p>Please enter your details</p>
 
                     <form onSubmit={handleSubmit}>
+                        {/* Show first name & last name fields only for registration */}
+                        {method === "register" && (
+                            <>
+                                <input
+                                    className="form-input"
+                                    type="text"
+                                    value={firstName}
+                                    onChange={(e) => setFirstName(e.target.value)}
+                                    placeholder="First Name"
+                                />
+                                <input
+                                    className="form-input"
+                                    type="text"
+                                    value={lastName}
+                                    onChange={(e) => setLastName(e.target.value)}
+                                    placeholder="Last Name"
+                                />
+                            </>
+                        )}
                         <input
                             className="form-input"
                             type="email"
@@ -57,22 +88,20 @@ function Form({ route, method }) {
                         />
 
                         <div className="form-links">
-
                             <a href="#">Forgot password?</a>
                         </div>
 
-                        {loading && <LoadingIndicator />}
+                        {loading && <LoadingIndicator />} {/* Show loading spinner if request is in progress */}
 
                         <button className="form-button" type="submit">
                             {name}
                         </button>
 
-                      
-                        {/* Sign-up link navigate automatically */}
+                        {/* Link to navigate between login and register */}
                         <p className="signup-link">
                             Don't have an account?{" "}
-                            <span 
-                                className="signup-button" 
+                            <span
+                                className="signup-button"
                                 onClick={() => navigate("/register")}
                                 style={{ color: "#007bff", cursor: "pointer", textDecoration: "underline" }}
                             >

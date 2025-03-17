@@ -1,45 +1,43 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 
-# Custom User Manager
+# Custom user manager to handle user creation logic
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
-        email = self.normalize_email(email)
+
+
+        email = self.normalize_email(email)  # Email is stored in a standard format
         user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
+        user.set_password(password)  # Hash the password before saving
+        user.save(using=self._db)  # Save the user instance
         return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
 
-        return self.create_user(email, password, **extra_fields)
-
-# Custom User Model
+# Custom User model replacing Django's default User model
 class CustomUser(AbstractBaseUser):
-    email = models.EmailField(unique=True)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
+    email = models.EmailField(unique=True)  # Primary identifier for authentication
+    first_name = models.CharField(max_length=30)  
+    last_name = models.CharField(max_length=30)   
+   
 
-    objects = CustomUserManager()
+    objects = CustomUserManager()  # Link the custom manager to this model
 
-    USERNAME_FIELD = 'email'  # Use email as the unique identifier
-    REQUIRED_FIELDS = []  # You can leave this empty or specify additional fields like first name
+    USERNAME_FIELD = 'email'  # Use email as the unique identifier instead of username
+    REQUIRED_FIELDS = ['first_name', 'last_name']  
 
     def __str__(self):
-        return self.email
+        return self.email  # Display email when printing user instances
 
-
-# Note Model (Updated to use the Custom User model)
+# Note Model (Allows users to create and manage notes)
 class Note(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    # ForeignKey reference updated to use CustomUser
-    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="notes")
+    title = models.CharField(max_length=100)  # Note title with a max length
+    content = models.TextField()  # Stores the main content of the note
+    created_at = models.DateTimeField(auto_now_add=True)  # Auto timestamp when created
+    author = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="notes"
+    )  # Link notes to users, deleting a user removes their notes
 
     def __str__(self):
-        return self.title
+        return self.title  # Display title when printing note instances
