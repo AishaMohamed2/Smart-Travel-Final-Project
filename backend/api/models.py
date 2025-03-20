@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 # Custom user manager to handle user creation logic
 class CustomUserManager(BaseUserManager):
@@ -24,20 +26,38 @@ class CustomUser(AbstractBaseUser):
 
     objects = CustomUserManager()  # Link the custom manager to this model
 
-    USERNAME_FIELD = 'email'  # Use email as the unique identifier instead of username
+    USERNAME_FIELD = 'email'  
     REQUIRED_FIELDS = ['first_name', 'last_name']  
 
     def __str__(self):
         return self.email  # Display email when printing user instances
 
-# Note Model (Allows users to create and manage notes)
-class Note(models.Model):
-    title = models.CharField(max_length=100)  # Note title with a max length
-    content = models.TextField()  # Stores the main content of the note
-    created_at = models.DateTimeField(auto_now_add=True)  # Auto timestamp when created
-    author = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="notes"
-    )  # Link notes to users, deleting a user removes their notes
+
+class Trip(models.Model):
+    TRAVELER_TYPES = [
+        ("luxury", "Luxury"),
+        ("medium", "Medium"),
+        ("budget", "Budget"),
+    ]
+
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="trips"
+    )  # Link trips to users, deleting a user removes their trips
+    trip_name = models.CharField(max_length=255)  # Name of the trip
+    destination = models.CharField(max_length=255)  # Destination of the trip
+    start_date = models.DateField()  # Start date of the trip
+    end_date = models.DateField()  # End date of the trip
+    total_budget = models.DecimalField(max_digits=10, decimal_places=2)  # Total budget for the trip
+    traveler_type = models.CharField(
+        max_length=10, choices=TRAVELER_TYPES, default="medium"
+    )  # Type of traveler (Luxury, Medium, Budget)
+
+    savings = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00
+    )  
+    
+    
+
 
     def __str__(self):
-        return self.title  # Display title when printing note instances
+        return f"{self.trip_name} - {self.destination} ({self.start_date} to {self.end_date})"

@@ -1,83 +1,61 @@
-import { useState, useEffect } from "react";
-import api from "../api";
-import Note from "../components/Note"
-import "../styles/Home.css"
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; // Import Link for navigation
+import api from "../api"; // Assuming you have an api instance for requests
+import "../styles/Home.css";
 
 function Home() {
-    const [notes, setNotes] = useState([]);
-    const [content, setContent] = useState("");
-    const [title, setTitle] = useState("");
+    const [upcomingTrips, setUpcomingTrips] = useState([]);
 
     useEffect(() => {
-        getNotes();
-    }, []);
-
-    const getNotes = () => {
-        api
-            .get("/api/notes/")
-            .then((res) => res.data)
-            .then((data) => {
-                setNotes(data);
-                console.log(data);
-            })
-            .catch((err) => alert(err));
-    };
-
-    const deleteNote = (id) => {
-        api
-            .delete(`/api/notes/delete/${id}/`)
-            .then((res) => {
-                if (res.status === 204) alert("Note deleted!");
-                else alert("Failed to delete note.");
-                getNotes();
-            })
-            .catch((error) => alert(error));
-    };
-
-    const createNote = (e) => {
-        e.preventDefault();
-        api
-            .post("/api/notes/", { content, title })
-            .then((res) => {
-                if (res.status === 201) alert("Note created!");
-                else alert("Failed to make note.");
-                getNotes();
-            })
-            .catch((err) => alert(err));
-    };
+        const fetchTrips = async () => {
+            try {
+                const response = await api.get("/api/trips/");
+                const currentDate = new Date();
+                currentDate.setHours(0, 0, 0, 0); // Reset time to midnight
+        
+                const upcoming = response.data.filter((trip) => {
+                    const startDate = new Date(trip.start_date);
+                    startDate.setHours(0, 0, 0, 0); // Reset start date time to midnight
+                    return startDate >= currentDate;
+                });
+        
+                setUpcomingTrips(upcoming);
+            } catch (error) {
+                console.error("Error fetching trips:", error);
+            }
+        };
+        
+        fetchTrips();
+    }, []); // Empty dependency array ensures this runs once when the component mounts
 
     return (
         <div>
+            <h2>Welcome to Smart Travel</h2>
+
+            {/* Navigation link to Trip page */}
             <div>
-                <h2>Notes</h2>
-                {notes.map((note) => (
-                    <Note note={note} onDelete={deleteNote} key={note.id} />
-                ))}
+                <Link to="/trips">Go to Trip Page</Link>
             </div>
-            <h2>Create a Note</h2>
-            <form onSubmit={createNote}>
-                <label htmlFor="title">Title:</label>
-                <br />
-                <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    required
-                    onChange={(e) => setTitle(e.target.value)}
-                    value={title}
-                />
-                <label htmlFor="content">Content:</label>
-                <br />
-                <textarea
-                    id="content"
-                    name="content"
-                    required
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                ></textarea>
-                <br />
-                <input type="submit" value="Submit"></input>
-            </form>
+
+            {/* Display upcoming trips */}
+            <div className="upcoming-trips">
+                <h3>Upcoming Trips</h3>
+                {upcomingTrips.length === 0 ? (
+                    <p>No upcoming trips found.</p>
+                ) : (
+                    <ul>
+                        {upcomingTrips.map((trip) => (
+                            <li key={trip.id}>
+                                <h4>{trip.trip_name}</h4>
+                                <p>Destination: {trip.destination}</p>
+                                <p>Start Date: {new Date(trip.start_date).toLocaleDateString()}</p>
+                                <p>End Date: {new Date(trip.end_date).toLocaleDateString()}</p>
+                                <p>Total Budget: {trip.total_budget}</p>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
         </div>
     );
 }

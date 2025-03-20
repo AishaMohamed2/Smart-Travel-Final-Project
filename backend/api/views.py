@@ -1,31 +1,8 @@
 from django.shortcuts import render
 from rest_framework import generics
-from .serializers import UserSerializer, NoteSerializer
+from .serializers import UserSerializer, TripSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Note, CustomUser  # Import CustomUser instead of default User
-
-# View to list and create notes
-class NoteListCreate(generics.ListCreateAPIView):
-    serializer_class = NoteSerializer
-    permission_classes = [IsAuthenticated]  # Only authenticated users can access
-
-    def get_queryset(self):
-        user = self.request.user  # Get the logged-in user
-        return Note.objects.filter(author=user)  # Only return notes belonging to this user
-
-    def perform_create(self, serializer):
-        if serializer.is_valid():  # Ensure data is valid before saving
-            serializer.save(author=self.request.user)  # Set the logged-in user as the note author
-
-
-# View to delete a note
-class NoteDelete(generics.DestroyAPIView):
-    serializer_class = NoteSerializer
-    permission_classes = [IsAuthenticated]  # Only authenticated users can delete notes
-
-    def get_queryset(self):
-        user = self.request.user  # Get the logged-in user
-        return Note.objects.filter(author=user)  # Allow deleting only user's own notes
+from .models import CustomUser, Trip  
 
 
 # View to create a new user
@@ -36,3 +13,16 @@ class CreateUserView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save()  # Save the user instance
+
+# View to list and create trips
+class TripListCreate(generics.ListCreateAPIView):
+    serializer_class = TripSerializer
+    permission_classes = [IsAuthenticated]  # Only authenticated users can access
+
+    def get_queryset(self):
+        # Return trips only for the logged-in user
+        return Trip.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # Automatically set the logged-in user as the trip owner
+        serializer.save(user=self.request.user)
