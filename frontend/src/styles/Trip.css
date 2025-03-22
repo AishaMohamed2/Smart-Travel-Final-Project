@@ -1,4 +1,12 @@
-/* frontend/src/styles/Trip.css */
+
+/* Logo styling */
+.logo {
+    position: absolute;
+    top: -60px;
+    left: -20px;
+    width: 250px; /* Adjust size */
+    height: auto;
+  }
 
 .trip-container {
     max-width: 1200px;

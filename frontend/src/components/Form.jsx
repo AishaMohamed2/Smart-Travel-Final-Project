@@ -4,20 +4,22 @@ import api from "../api";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import "../styles/Form.css";
 import LoadingIndicator from "./LoadingIndicator";
+import logo from "../assets/logo.png"; 
 
 function Form({ route, method }) {
+    // State variables for form fields and errors
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
-    const [apiError, setApiError] = useState(""); // Store API error messages
+    const [apiError, setApiError] = useState("");
 
     const navigate = useNavigate(); 
-
     const name = method === "login" ? "Sign In" : "Sign Up";
 
+    // Validate form fields
     const validateForm = () => {
         let newErrors = {};
         
@@ -33,17 +35,20 @@ function Form({ route, method }) {
         return Object.keys(newErrors).length === 0;
     };
 
+    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setApiError(""); // Clear previous API error
+        setApiError("");
 
+        // Validate the form before submitting
         if (!validateForm()) {
             setLoading(false);
             return;
         }
 
         try {
+            // Prepare data for the API request
             const data = method === "login"
                 ? { email, password }
                 : { email, password, first_name: firstName, last_name: lastName };
@@ -51,13 +56,16 @@ function Form({ route, method }) {
             const res = await api.post(route, data);
             
             if (method === "login") {
+                // Save tokens to local storage and navigate to the home page
                 localStorage.setItem(ACCESS_TOKEN, res.data.access);
                 localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
                 navigate("/");
             } else {
+                // Navigate to the login page after registration
                 navigate("/login");
             }
         } catch (error) {
+            // Handle API errors
             if (error.response && error.response.data) {
                 setApiError(error.response.data.detail || "An error occurred. Please try again.");
             } else {
@@ -71,11 +79,14 @@ function Form({ route, method }) {
     return (
         <div className="login-container">
             <div className="left-panel">
+                {/* Logo */}
+                <img src={logo} alt="Smart Travel Logo" className="logo" />
+
                 <div className="form-container">
                     <h2>Welcome</h2>
                     <p>Please enter your details</p>
 
-                    {apiError && <p className="api-error">{apiError}</p>} {/* Show API error */}
+                    {apiError && <p className="api-error">{apiError}</p>}
 
                     <form onSubmit={handleSubmit}>
                         {method === "register" && (

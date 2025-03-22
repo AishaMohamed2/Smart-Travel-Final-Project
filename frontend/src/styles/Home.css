@@ -1,3 +1,13 @@
+/* Logo styling */
+.logo {
+  position: absolute;
+  top: -60px;
+  left: -20px;
+  width: 250px; /* Adjust size */
+  height: auto;
+}
+
+
 /* Container for the whole page */
 div {
     font-family: Arial, sans-serif;

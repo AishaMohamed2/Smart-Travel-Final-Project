@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom"; // Import Link for navigation
-import api from "../api"; // Assuming you have an api instance for requests
+import { Link } from "react-router-dom"; 
+import api from "../api"; 
 import "../styles/Home.css";
 
 function Home() {
@@ -11,7 +11,7 @@ function Home() {
             try {
                 const response = await api.get("/api/trips/");
                 const currentDate = new Date();
-                currentDate.setHours(0, 0, 0, 0); // Reset time to midnight
+                currentDate.setHours(0, 0, 0, 0); 
         
                 const upcoming = response.data.filter((trip) => {
                     const startDate = new Date(trip.start_date);
@@ -26,7 +26,7 @@ function Home() {
         };
         
         fetchTrips();
-    }, []); // Empty dependency array ensures this runs once when the component mounts
+    }, []); 
 
     return (
         <div>

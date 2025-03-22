@@ -10,20 +10,24 @@ from .models import CustomUser, Trip
 class CreateUserView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [AllowAny]  # Anyone can create an account
+    permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
+        # Save the new user
         serializer.save()
 
 # View to list and create trips
 class TripListCreate(generics.ListCreateAPIView):
     serializer_class = TripSerializer
-    permission_classes = [IsAuthenticated]  # Only authenticated users can access
+    # Only authenticated users can access this view
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Trip.objects.filter(user=self.request.user)  # Only show user's trips
+        # Only show trips belonging to the logged-in user
+        return Trip.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
+        # Automatically associate the trip with the logged-in user
         serializer.save(user=self.request.user)
 
 # View to delete a trip
@@ -32,9 +36,34 @@ class TripDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Trip.objects.filter(user=self.request.user)  # Ensure users can only delete their own trips
+        # Ensure users can only delete their own trips
+        return Trip.objects.filter(user=self.request.user)
 
     def delete(self, request, *args, **kwargs):
+        # Find the trip or return a 404 error
         trip = get_object_or_404(Trip, id=kwargs["pk"], user=request.user)
         trip.delete()
         return Response({"message": "Trip deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+# View to update an existing trip
+class TripUpdateView(generics.UpdateAPIView):
+    serializer_class = TripSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Ensure users can only update their own trips
+        return Trip.objects.filter(user=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        # Allow partial updates (e.g., updating only some fields)
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Invalidate any prefetched objects cache
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
