@@ -6,42 +6,65 @@ import "../styles/Form.css";
 import LoadingIndicator from "./LoadingIndicator";
 
 function Form({ route, method }) {
-    // State to manage form inputs
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
-    const [loading, setLoading] = useState(false); // Loading state for API requests
+    const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
+    const [apiError, setApiError] = useState(""); // Store API error messages
 
-    const navigate = useNavigate(); // Hook to programmatically navigate users
+    const navigate = useNavigate(); 
 
-    // Determine form title based on method
     const name = method === "login" ? "Sign In" : "Sign Up";
 
+    const validateForm = () => {
+        let newErrors = {};
+        
+        if (!email.trim()) newErrors.email = "Email is required.";
+        if (!password.trim()) newErrors.password = "Password is required.";
+
+        if (method === "register") {
+            if (!firstName.trim()) newErrors.firstName = "First name is required.";
+            if (!lastName.trim()) newErrors.lastName = "Last name is required.";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = async (e) => {
-        setLoading(true); // Show loading indicator
-        e.preventDefault(); // Prevent default form submission behavior
+        e.preventDefault();
+        setLoading(true);
+        setApiError(""); // Clear previous API error
+
+        if (!validateForm()) {
+            setLoading(false);
+            return;
+        }
 
         try {
-            // Prepare data payload based on method (login/register)
             const data = method === "login"
                 ? { email, password }
                 : { email, password, first_name: firstName, last_name: lastName };
 
-            const res = await api.post(route, data); // Send request to API
+            const res = await api.post(route, data);
             
             if (method === "login") {
-                // Store authentication tokens for logged-in users
                 localStorage.setItem(ACCESS_TOKEN, res.data.access);
                 localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-                navigate("/"); // Redirect to home after login
+                navigate("/");
             } else {
-                navigate("/login"); // Redirect to login after successful registration
+                navigate("/login");
             }
         } catch (error) {
-            alert(error); // Show error alert if request fails
+            if (error.response && error.response.data) {
+                setApiError(error.response.data.detail || "An error occurred. Please try again.");
+            } else {
+                setApiError("Something went wrong. Please try again.");
+            }
         } finally {
-            setLoading(false); // Hide loading indicator
+            setLoading(false);
         }
     };
 
@@ -52,52 +75,67 @@ function Form({ route, method }) {
                     <h2>Welcome</h2>
                     <p>Please enter your details</p>
 
+                    {apiError && <p className="api-error">{apiError}</p>} {/* Show API error */}
+
                     <form onSubmit={handleSubmit}>
-                        {/* Show first name & last name fields only for registration */}
                         {method === "register" && (
                             <>
-                                <input
-                                    className="form-input"
-                                    type="text"
-                                    value={firstName}
-                                    onChange={(e) => setFirstName(e.target.value)}
-                                    placeholder="First Name"
-                                />
-                                <input
-                                    className="form-input"
-                                    type="text"
-                                    value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
-                                    placeholder="Last Name"
-                                />
+                                <div className="input-group">
+                                    <input
+                                        className={`form-input ${errors.firstName ? "error" : ""}`}
+                                        type="text"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        placeholder="First Name"
+                                    />
+                                    {errors.firstName && <p className="error-text">{errors.firstName}</p>}
+                                </div>
+
+                                <div className="input-group">
+                                    <input
+                                        className={`form-input ${errors.lastName ? "error" : ""}`}
+                                        type="text"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        placeholder="Last Name"
+                                    />
+                                    {errors.lastName && <p className="error-text">{errors.lastName}</p>}
+                                </div>
                             </>
                         )}
-                        <input
-                            className="form-input"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Email"
-                        />
-                        <input
-                            className="form-input"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Password"
-                        />
+
+                        <div className="input-group">
+                            <input
+                                className={`form-input ${errors.email ? "error" : ""}`}
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Email"
+                            />
+                            {errors.email && <p className="error-text">{errors.email}</p>}
+                        </div>
+
+                        <div className="input-group">
+                            <input
+                                className={`form-input ${errors.password ? "error" : ""}`}
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Password"
+                            />
+                            {errors.password && <p className="error-text">{errors.password}</p>}
+                        </div>
 
                         <div className="form-links">
                             <a href="#">Forgot password?</a>
                         </div>
 
-                        {loading && <LoadingIndicator />} {/* Show loading spinner if request is in progress */}
+                        {loading && <LoadingIndicator />}
 
                         <button className="form-button" type="submit">
                             {name}
                         </button>
 
-                        {/* Link to navigate between login and register */}
                         <p className="signup-link">
                             Don't have an account?{" "}
                             <span

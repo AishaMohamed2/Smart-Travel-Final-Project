@@ -98,3 +98,34 @@ html, body {
   font-size: 18px;
   margin-top: 20px;
 }
+
+/* API Error Message */
+.api-error {
+  color: red;
+  background-color: #ffe6e6;
+  padding: 10px;
+  border: 1px solid red;
+  border-radius: 5px;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* Error Input Field */
+.form-input.error {
+  border: 2px solid red;
+  background-color: #ffe6e6;
+}
+
+/* Error Message */
+.error-text {
+  color: red;
+  font-size: 14px;
+  margin-top: -5px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+/* Input Group */
+.input-group {
+  margin-bottom: 15px;
+}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../api";
 import "../styles/Trip.css";
-import { FaPlane} from "react-icons/fa"; // Icons for categories
+import { FaPlane, FaTrash } from "react-icons/fa"; // Icons for trip and delete
 
 function Trip() {
     const [tripName, setTripName] = useState("");
@@ -13,6 +13,13 @@ function Trip() {
     const [savings, setSavings] = useState(0);
     const [error, setError] = useState("");
     const [trips, setTrips] = useState([]);
+
+    // Set budget limits per day for each traveller type
+    const budgetLimits = {
+        luxury: Infinity, // No limit for luxury
+        medium: 200,
+        budget: 100,
+    };
 
     // Fetch trips from the API when the component mounts
     useEffect(() => {
@@ -28,6 +35,68 @@ function Trip() {
         fetchTrips();
     }, []);
 
+    // Handle Start Date Change
+    const handleStartDateChange = (e) => {
+        const newStartDate = e.target.value;
+        setStartDate(newStartDate);
+
+        // If the selected end date is before the new start date, reset it
+        if (endDate && new Date(endDate) < new Date(newStartDate)) {
+            setEndDate(newStartDate);
+        }
+    };
+
+    // Handle End Date Change
+    const handleEndDateChange = (e) => {
+        const newEndDate = e.target.value;
+
+        // Ensure end date is not before start date
+        if (new Date(newEndDate) < new Date(startDate)) {
+            alert("End date cannot be before start date.");
+            return;
+        }
+        setEndDate(newEndDate);
+    };
+
+    // Handle Total Budget Change with daily calculation
+const handleTotalBudgetChange = (e) => {
+    const newBudget = parseFloat(e.target.value);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Calculate trip duration in days
+    const tripDuration = startDate && endDate ? (end - start) / (1000 * 60 * 60 * 24) + 1 : 1; // +1 to include the start day
+
+    // If the trip duration is calculated, update the total budget
+    if (tripDuration && travelerType !== "luxury") {
+        const maxBudgetPerDay = budgetLimits[travelerType]; // Budget limit per day for the traveler type
+        const maxTotalBudget = maxBudgetPerDay * tripDuration;
+
+        if (newBudget > maxTotalBudget) {
+            alert(`Total budget exceeds the limit for a ${travelerType} traveller. The maximum budget for your trip is £${maxTotalBudget}.`);
+            return;
+        }
+    }
+
+    setTotalBudget(newBudget); // Update the total budget if everything is valid
+};
+
+
+    // Handle trip deletion
+    const handleDeleteTrip = async (tripId) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this trip?");
+        if (!confirmDelete) return;
+
+        try {
+            await api.delete(`/api/trips/${tripId}/`);
+            setTrips(trips.filter(trip => trip.id !== tripId)); // Remove from UI
+        } catch (error) {
+            console.error("Error deleting trip:", error);
+            alert("Failed to delete trip. Please try again.");
+        }
+    };
+
+    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -91,7 +160,7 @@ function Trip() {
                         </div>
 
                         <div className="form-group">
-                            <label>Traveler Type</label>
+                            <label>Traveller Type</label>
                             <select
                                 value={travelerType}
                                 onChange={(e) => setTravelerType(e.target.value)}
@@ -107,7 +176,7 @@ function Trip() {
                             <input
                                 type="date"
                                 value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
+                                onChange={handleStartDateChange}
                                 required
                             />
                         </div>
@@ -117,7 +186,7 @@ function Trip() {
                             <input
                                 type="date"
                                 value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
+                                onChange={handleEndDateChange}
                                 required
                             />
                         </div>
@@ -137,7 +206,7 @@ function Trip() {
                             <input
                                 type="number"
                                 value={totalBudget}
-                                onChange={(e) => setTotalBudget(e.target.value)}
+                                onChange={handleTotalBudgetChange}
                                 required
                             />
                         </div>
@@ -156,27 +225,27 @@ function Trip() {
                             {trips.map((trip) => (
                                 <li key={trip.id}>
                                     <div className="trip-icon">
-                                        <FaPlane /> {/* Icon for the trip */}
+                                        <FaPlane /> {/* Trip icon */}
                                     </div>
                                     <div className="trip-details">
                                         <h4>{trip.trip_name}</h4>
                                         <p>Destination: {trip.destination}</p>
                                         <p>Start Date: {trip.start_date}</p>
                                         <p>End Date: {trip.end_date}</p>
-                                        <p>Total Budget: ${trip.total_budget}</p>
-                                        <p>Traveler Type: {trip.traveler_type}</p>
+                                        <p>Total Budget: £{trip.total_budget}</p>
+                                        <p>Traveller Type: {trip.traveler_type}</p>
                                     </div>
+                                    <button onClick={() => handleDeleteTrip(trip.id)} className="delete-button">
+                                        <FaTrash /> {/* Delete icon */}
+                                    </button>
                                 </li>
                             ))}
                         </ul>
                     )}
                 </div>
             </div>
-
-           
         </div>
     );
 }
 
 export default Trip;
-

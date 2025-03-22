@@ -1,18 +1,19 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
-from .serializers import UserSerializer, TripSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import UserSerializer, TripSerializer
 from .models import CustomUser, Trip  
-
 
 # View to create a new user
 class CreateUserView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()  # Using CustomUser instead of Django's default User model
+    queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [AllowAny]  # Anyone can create an account (no authentication needed)
+    permission_classes = [AllowAny]  # Anyone can create an account
 
     def perform_create(self, serializer):
-        serializer.save()  # Save the user instance
+        serializer.save()
 
 # View to list and create trips
 class TripListCreate(generics.ListCreateAPIView):
@@ -20,9 +21,20 @@ class TripListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]  # Only authenticated users can access
 
     def get_queryset(self):
-        # Return trips only for the logged-in user
-        return Trip.objects.filter(user=self.request.user)
+        return Trip.objects.filter(user=self.request.user)  # Only show user's trips
 
     def perform_create(self, serializer):
-        # Automatically set the logged-in user as the trip owner
         serializer.save(user=self.request.user)
+
+# View to delete a trip
+class TripDeleteView(generics.DestroyAPIView):
+    serializer_class = TripSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Trip.objects.filter(user=self.request.user)  # Ensure users can only delete their own trips
+
+    def delete(self, request, *args, **kwargs):
+        trip = get_object_or_404(Trip, id=kwargs["pk"], user=request.user)
+        trip.delete()
+        return Response({"message": "Trip deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
