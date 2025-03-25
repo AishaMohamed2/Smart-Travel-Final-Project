@@ -1,3 +1,54 @@
+/* General Layout */
+.home-container {
+    display: flex;
+    min-height: 100vh;
+    font-family: "Inter", sans-serif;
+    background-color: #ffffff;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background-color: #ffffff; /* Changed to white */
+    color: #1e293b; /* Adjusted text color for better contrast */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-right: 1px solid #e5e7eb; /* Added border for separation */
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #1e293b; /* Adjusted text color */
+}
+
+.sidebar a {
+    text-decoration: none;
+    color: #1e293b; /* Adjusted text color */
+    padding: 12px 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.3s;
+    font-weight: 500;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background: #f8f9fa; /* Light grey background on hover/active */
+}
+
+/* Main Content */
+.main-content {
+    flex-grow: 1;
+    padding: 30px;
+    background-color: #ffffff;
+}
+
+/* Expense Container */
 .expense-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -113,4 +164,17 @@
 .error-message {
     color: red;
     text-align: center;
+}
+
+/* Footer */
+.footer {
+    background-color: #1e293b; /* Shade of blue */
+    color: white;
+    padding: 20px;
+    text-align: center;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    left: 0;
+    border-top: 1px solid #334155; /* Optional: Add a border for separation */
 }

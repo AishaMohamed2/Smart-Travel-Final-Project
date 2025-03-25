@@ -65,23 +65,24 @@ function Home() {
 
     return (
         <div className="home-container">
-            <div className="sidebar">
-                <h2>SmartTravel</h2>
-                <NavLink to="/" className={({ isActive }) => (isActive ? "active" : "")}>
-                    <FiHome /> Dashboard
-                </NavLink>
-                <NavLink to="/trips" className={({ isActive }) => (isActive ? "active" : "")}>
-                    <FiMap /> Trips
-                </NavLink>
-                <NavLink to="/expenses" className={({ isActive }) => (isActive ? "active" : "")}>
-                    <FiDollarSign /> Expenses
-                </NavLink>
-                <NavLink to="/analytics" className={({ isActive }) => (isActive ? "active" : "")}>
-                    <FiPieChart /> Analytics
-                </NavLink>
-                <NavLink to="/settings" className={({ isActive }) => (isActive ? "active" : "")}>
-                    <FiSettings /> Settings
-                </NavLink>
+              <div className="sidebar">
+                          <h2>SmartTravel</h2>
+                          <NavLink to="/" className={({ isActive }) => (isActive ? "active" : "")}>
+                              <FiHome /> Dashboard
+                          </NavLink>
+                          <NavLink to="/trips" className={({ isActive }) => (isActive ? "active" : "")}>
+                              <FiMap /> Add Trip
+                          </NavLink>
+                          <NavLink to="/expenses" className={({ isActive }) => (isActive ? "active" : "")}>
+                              <FiDollarSign /> Add Expense
+                          </NavLink>
+                          <NavLink to="/analytics" className={({ isActive }) => (isActive ? "active" : "")}>
+                              <FiPieChart /> Analytics
+                          </NavLink>
+                          <NavLink to="/settings" className={({ isActive }) => (isActive ? "active" : "")}>
+                              <FiSettings /> Settings
+                          </NavLink>
+
 
                 {/* Logout Button */}
                 <button className="logout-btn" onClick={handleLogout}>
@@ -121,6 +122,14 @@ function Home() {
                 <div className="recent-transactions">
                     <h3>Recent Transactions</h3>
                     <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {recentExpenses.map((expense) => (
                                 <tr key={expense.id}>
@@ -140,10 +149,12 @@ function Home() {
                     <div className="trip-cards">
                         {upcomingTrips.map((trip) => (
                             <div className="trip-card" key={trip.id}>
-                                <h4>{trip.trip_name}</h4>
+                                <div className="trip-header">
+                                    <h4>{trip.trip_name}</h4>
+                                    <span className="trip-badge">{calculateTripStatus(trip.start_date, trip.end_date)}</span>
+                                </div>
                                 <p>{trip.start_date} - {trip.end_date}</p>
                                 <p>Budget: £{trip.total_budget}</p>
-                                <p>{calculateTripStatus(trip.start_date, trip.end_date)}</p>
                             </div>
                         ))}
                     </div>

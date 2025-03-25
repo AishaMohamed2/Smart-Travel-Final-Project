@@ -5,8 +5,8 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Trip from "./components/Trip";
-import Expense from "./components/Expense"; 
+import Trip from "./pages/Trip";
+import Expense from "./pages/Expense"; 
 
 function Logout() {
   localStorage.clear();
