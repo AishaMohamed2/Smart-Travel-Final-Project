@@ -30,7 +30,7 @@ function Home() {
         const fetchExpenses = async () => {
             try {
                 const response = await api.get("/api/expenses/");
-                setRecentExpenses(response.data.slice(0, 3)); // Show 3 most recent expenses
+                setRecentExpenses(response.data.slice(0, 5)); // Show 5 most recent expenses
             } catch (error) {
                 console.error("Error fetching expenses:", error);
             }
@@ -51,9 +51,7 @@ function Home() {
         } else if (today >= tripStartDate && today <= tripEndDate) {
             const daysPassed = Math.ceil((today - tripStartDate) / (1000 * 60 * 60 * 24)) + 1;
             return `Day ${daysPassed} of trip`;
-        } else {
-            return "Trip ended"; // This case should never appear because we filter out ended trips
-        }
+        } 
     };
 
     const handleLogout = () => {

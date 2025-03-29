@@ -3,8 +3,35 @@ from rest_framework import generics, serializers
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import api_view
+from transformers import pipeline
 from .serializers import UserSerializer, TripSerializer, ExpenseSerializer
 from .models import CustomUser, Trip, Expense
+import re
+
+# Initialize the Hugging Face model globally
+classifier = pipeline("zero-shot-classification", 
+                     model="facebook/bart-large-mnli")
+
+# Add this new view for expense categorization
+@api_view(['POST'])
+def categorize_expense(request):
+    description = request.data.get('description', '')
+    
+    candidate_labels = [
+        "food & dining", 
+        "transport", 
+        "accommodation", 
+        "entertainment", 
+        "other"
+    ]
+    
+    try:
+        result = classifier(description, candidate_labels)
+        predicted_label = result['labels'][0]
+        return Response({"category": predicted_label.split(' ')[0]})  # Returns "food" from "food & dining"
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 # View to create a new user
 class CreateUserView(generics.CreateAPIView):
