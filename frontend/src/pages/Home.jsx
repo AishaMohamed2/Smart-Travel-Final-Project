@@ -21,7 +21,7 @@ function Home() {
                 // Sort trips by start date (earliest first)
                 const sortedTrips = filteredTrips.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
-                setUpcomingTrips(sortedTrips.slice(0, 2)); // Show only the two most relevant trips
+                setUpcomingTrips(sortedTrips.slice(0, 4));
             } catch (error) {
                 console.error("Error fetching trips:", error);
             }
@@ -30,7 +30,7 @@ function Home() {
         const fetchExpenses = async () => {
             try {
                 const response = await api.get("/api/expenses/");
-                setRecentExpenses(response.data.slice(0, 5)); // Show 5 most recent expenses
+                setRecentExpenses(response.data.slice(0, 10)); // Show 5 most recent expenses
             } catch (error) {
                 console.error("Error fetching expenses:", error);
             }

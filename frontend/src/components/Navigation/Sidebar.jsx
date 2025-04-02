@@ -21,9 +21,7 @@ function Sidebar({ onLogout }) {
       <NavLink to="/settings" className={({ isActive }) => (isActive ? "active" : "")}>
         <FiSettings /> Settings
       </NavLink>
-      <button className="logout-btn" onClick={onLogout}>
-        <FiLogOut /> Logout
-      </button>
+
     </div>
   );
 }

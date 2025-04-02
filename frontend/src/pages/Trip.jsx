@@ -12,7 +12,7 @@ function Trip() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [totalBudget, setTotalBudget] = useState(0);
-    const [travelerType, setTravelerType] = useState("medium");
+    const [travelerType, setTravelerType] = useState("");
     const [savings, setSavings] = useState(0);
     const [error, setError] = useState("");
     const [trips, setTrips] = useState([]);
@@ -62,7 +62,7 @@ function Trip() {
         const end = new Date(endDate);
         const tripDuration = startDate && endDate ? (end - start) / (1000 * 60 * 60 * 24) + 1 : 1;
 
-        if (tripDuration && travelerType !== "luxury") {
+        if (travelerType && travelerType !== "luxury") {
             const maxBudgetPerDay = budgetLimits[travelerType];
             const maxTotalBudget = maxBudgetPerDay * tripDuration;
             if (newBudget > maxTotalBudget) {
@@ -94,7 +94,7 @@ function Trip() {
         setStartDate(trip.start_date);
         setEndDate(trip.end_date);
         setTotalBudget(trip.total_budget);
-        setTravelerType(trip.traveler_type);
+        setTravelerType(trip.traveler_type || "");
         setSavings(trip.savings);
         setValidationError("");
     };
@@ -104,6 +104,11 @@ function Trip() {
         setValidationError("");
         setError("");
         
+        if (!travelerType) {
+            setValidationError("Please select a traveller type.");
+            return;
+        }
+
         const currentDate = new Date();
         currentDate.setHours(0, 0, 0, 0);
         const selectedEndDate = new Date(endDate);
@@ -155,7 +160,7 @@ function Trip() {
             setStartDate("");
             setEndDate("");
             setTotalBudget(0);
-            setTravelerType("medium");
+            setTravelerType("");
             setSavings(0);
         } catch (error) {
             console.error("Error details:", error.response ? error.response.data : error);

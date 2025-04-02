@@ -3,35 +3,12 @@ from rest_framework import generics, serializers
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.decorators import api_view
-from transformers import pipeline
 from .serializers import UserSerializer, TripSerializer, ExpenseSerializer
 from .models import CustomUser, Trip, Expense
-import re
-
-# Initialize the Hugging Face model globally
-classifier = pipeline("zero-shot-classification", 
-                     model="facebook/bart-large-mnli")
-
-# Add this new view for expense categorization
-@api_view(['POST'])
-def categorize_expense(request):
-    description = request.data.get('description', '')
-    
-    candidate_labels = [
-        "food & dining", 
-        "transport", 
-        "accommodation", 
-        "entertainment", 
-        "other"
-    ]
-    
-    try:
-        result = classifier(description, candidate_labels)
-        predicted_label = result['labels'][0]
-        return Response({"category": predicted_label.split(' ')[0]})  # Returns "food" from "food & dining"
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
+from rest_framework.views import APIView
+from django.db.models import Sum
+from datetime import datetime, timedelta
+from rest_framework.generics import UpdateAPIView, DestroyAPIView, RetrieveAPIView
 
 # View to create a new user
 class CreateUserView(generics.CreateAPIView):
@@ -42,7 +19,7 @@ class CreateUserView(generics.CreateAPIView):
     def perform_create(self, serializer):
         # Save the new user
         serializer.save()
-
+        
 # View to list and create trips
 class TripListCreate(generics.ListCreateAPIView):
     serializer_class = TripSerializer
@@ -146,3 +123,183 @@ class ExpenseUpdateView(generics.UpdateAPIView):
             instance._prefetched_objects_cache = {}
 
         return Response(serializer.data)
+
+
+class AllTripsAnalyticsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            trips = Trip.objects.filter(user=request.user)
+            
+            if not trips.exists():
+                return Response(
+                    {"error": "No trips found for this user"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Calculate totals across all trips
+            total_budget = sum(trip.total_budget for trip in trips)
+            total_spent = Expense.objects.filter(
+                trip__in=trips
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            remaining_budget = total_budget - total_spent
+
+            # Get spending by category across all trips
+            category_data = Expense.objects.filter(
+                trip__in=trips
+            ).values('category').annotate(
+                total=Sum('amount')
+            ).order_by('-total')
+
+            # Convert to dictionary with proper labels
+            category_dict = {
+                item['category']: item['total']
+                for item in category_data
+            }
+
+            # Prepare daily spending data across all trips
+            daily_spending_data = Expense.objects.filter(
+                trip__in=trips
+            ).values('date').annotate(
+                total=Sum('amount')
+            ).order_by('date')
+
+            # Convert to dictionary with date strings as keys
+            daily_spending = {
+                item['date'].strftime("%Y-%m-%d"): float(item['total'])
+                for item in daily_spending_data
+            }
+
+            # Prepare trip data for the bar chart
+            trip_data = []
+            for trip in trips:
+                trip_spent = Expense.objects.filter(
+                    trip=trip
+                ).aggregate(total=Sum('amount'))['total'] or 0
+                
+                trip_data.append({
+                    'trip_id': trip.id,
+                    'trip_name': trip.trip_name,
+                    'destination': trip.destination,
+                    'start_date': trip.start_date.strftime("%Y-%m-%d"),
+                    'end_date': trip.end_date.strftime("%Y-%m-%d"),
+                    'total_budget': float(trip.total_budget),
+                    'total_spent': float(trip_spent),
+                    'remaining_budget': float(trip.total_budget - trip_spent),
+                })
+
+            response_data = {
+                'total_budget': float(total_budget),
+                'total_spent': float(total_spent),
+                'remaining_budget': float(remaining_budget),
+                'categories': category_dict,
+                'daily_spending': daily_spending,
+                'trips': trip_data
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+class TripAnalyticsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, trip_id):
+        try:
+            trip = Trip.objects.get(id=trip_id, user=request.user)
+            expenses = Expense.objects.filter(trip=trip)
+            
+            # Calculate totals
+            total_spent = expenses.aggregate(total=Sum('amount'))['total'] or 0
+            remaining_budget = float(trip.total_budget) - float(total_spent)
+            
+            # Calculate daily average
+            start_date = trip.start_date
+            end_date = trip.end_date
+            trip_duration = (end_date - start_date).days + 1
+            daily_average = float(total_spent) / trip_duration if trip_duration > 0 else 0
+            
+            # Calculate spending by category
+            categories = expenses.values('category').annotate(total=Sum('amount'))
+            category_data = {item['category']: float(item['total']) for item in categories}
+            
+            # Prepare daily spending data
+            daily_spending = {}
+            current_date = start_date
+            while current_date <= end_date:
+                daily_expenses = expenses.filter(date=current_date)
+                daily_total = daily_expenses.aggregate(total=Sum('amount'))['total'] or 0
+                daily_spending[current_date.strftime("%Y-%m-%d")] = float(daily_total)
+                current_date += timedelta(days=1)
+            
+            response_data = {
+                'trip_name': trip.trip_name,
+                'destination': trip.destination,
+                'start_date': trip.start_date.strftime("%Y-%m-%d"),
+                'end_date': trip.end_date.strftime("%Y-%m-%d"),
+                'total_budget': float(trip.total_budget),
+                'total_spent': float(total_spent),
+                'remaining_budget': remaining_budget,
+                'daily_average': daily_average,
+                'categories': category_data,
+                'daily_spending': daily_spending
+            }
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Trip.DoesNotExist:
+            return Response(
+                {"error": "Trip not found or doesn't belong to user"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class UserDetailView(RetrieveAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+class UserUpdateView(UpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        
+        # Handle password change separately
+        password = request.data.get('password')
+        if password:
+            instance.set_password(password)
+            instance.save()
+            return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
+        
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+class UserDeleteView(DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        user = self.get_object()
+        user.delete()
+        return Response({"message": "Account deleted successfully"}, status=status.HTTP_204_NO_CONTENT) 

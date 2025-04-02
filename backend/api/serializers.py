@@ -17,6 +17,19 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+    
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
+
+    def update(self, instance, validated_data):
+        # Remove password from validated_data if it exists
+        validated_data.pop('password', None)
+        return super().update(instance, validated_data)
+    
+
+    
+    
+
 # Serializer for the Trip model
 class TripSerializer(serializers.ModelSerializer):
     class Meta:

@@ -22,7 +22,7 @@ function TripForm({
 }) {
     return (
         <div className="trip-form">
-            <h2>{editingTripId ? "Edit Your Trip" : "Set Your Trip Budget"}</h2>
+            <h2>{editingTripId ? "Edit Your Trip" : "Add Trip"}</h2>
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label>Trip Name</label>
@@ -49,7 +49,9 @@ function TripForm({
                     <select
                         value={travelerType}
                         onChange={(e) => setTravelerType(e.target.value)}
+                        required
                     >
+                        <option value="" disabled>Select traveller type</option>
                         <option value="luxury">Luxury</option>
                         <option value="medium">Medium</option>
                         <option value="budget">Budget</option>
@@ -73,6 +75,7 @@ function TripForm({
                         value={endDate}
                         onChange={handleEndDateChange}
                         required
+                        min={startDate} // This ensures the user cannot select an end date before the start date
                     />
                 </div>
 

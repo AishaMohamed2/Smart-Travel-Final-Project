@@ -6,7 +6,9 @@ import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Trip from "./pages/Trip";
-import Expense from "./pages/Expense"; 
+import Expense from "./pages/Expense";
+import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
 
 function Logout() {
   localStorage.clear();
@@ -47,6 +49,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Expense />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           }
         />

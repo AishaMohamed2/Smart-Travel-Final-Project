@@ -18,7 +18,7 @@ import os
 load_dotenv()
 
 # Set the custom user model
-AUTH_USER_MODEL = 'api.CustomUser'  # Add this line
+AUTH_USER_MODEL = 'api.CustomUser'  
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -155,3 +155,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
+
