@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
-import Sidebar from "../components/Navigation/Sidebar";
 import { Pie, Bar, Line, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, LineElement, PointElement } from 'chart.js';
 import "../styles/Analytics.css";
+import { useCurrency } from '../utils/useCurrency';
 
+// Register ChartJS components - this sets up the chart types we'll use
 ChartJS.register(
   ArcElement, Tooltip, Legend, 
   CategoryScale, LinearScale, 
@@ -13,6 +14,10 @@ ChartJS.register(
 );
 
 function Analytics() {
+  // Currency formatting utilities from custom hook
+  const { formatAmount, currencySymbol } = useCurrency();
+
+  // State management for analytics data and UI
   const [analyticsData, setAnalyticsData] = useState({
     trips: [],
     totalBudget: 0,
@@ -42,11 +47,12 @@ function Analytics() {
     try {
       const response = await api.get("/api/trips/analytics/");
       const filteredTrips = filterTrips(response.data.trips);
+      
       setAnalyticsData({
         trips: filteredTrips,
-        totalBudget: response.data.total_budget,
-        totalSpent: response.data.total_spent,
-        categories: response.data.categories,
+        totalBudget: response.data.total_budget || 0,
+        totalSpent: response.data.total_spent || 0,
+        categories: response.data.categories || {},
         dailySpending: response.data.daily_spending || {}
       });
     } catch (err) {
@@ -146,7 +152,7 @@ function Analytics() {
       return {
         labels: ['No data'],
         datasets: [{
-          label: 'Daily Spending (£)',
+          label: `Daily Spending`,
           data: [0],
           backgroundColor: '#3b82f6',
           borderColor: '#2563eb',
@@ -161,7 +167,7 @@ function Analytics() {
     return {
       labels: sortedDates,
       datasets: [{
-        label: 'Daily Spending (£)',
+        label: `Daily Spending`,
         data: amounts,
         backgroundColor: '#3b82f6',
         borderColor: '#2563eb',
@@ -200,13 +206,23 @@ function Analytics() {
     return total > 0 ? Math.round((value / total) * 100) : 0;
   };
 
-  if (isLoading && !analyticsData.trips.length) {
+
+  if (!isLoading && analyticsData.trips.length === 0 && !selectedTripId) {
     return (
       <div className="analytics-page-container">
-        <Sidebar />
         <div className="main-content">
           <div className="analytics-container">
-            <div className="loading-spinner"></div>
+            <div className="no-analytics-message">
+              <h2>No Analytics Available</h2>
+              <p>Analytics are only shown for trips that have ended.</p>
+              <p>Start a new trip or wait for your current trips to complete to see analytics.</p>
+              <button 
+                onClick={() => navigate("/trips")} 
+                className="create-trip-btn"
+              >
+                Create a New Trip
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -215,7 +231,6 @@ function Analytics() {
 
   return (
     <div className="analytics-page-container">
-      <Sidebar />
       <div className="main-content">
         <div className="analytics-container">
           <div className="analytics-header">
@@ -248,7 +263,7 @@ function Analytics() {
               <div className="summary-section">
                 <div className="summary-card">
                   <h3>Total Spent</h3>
-                  <p className="amount">£{analyticsData.totalSpent.toFixed(2)}</p>
+                  <p className="amount">{formatAmount(analyticsData.totalSpent)}</p>
                   <div className="progress-bar">
                     <div 
                       className="progress-bar-fill" 
@@ -258,13 +273,13 @@ function Analytics() {
                     ></div>
                   </div>
                   <p className="summary-text">
-                    £{analyticsData.totalBudget.toFixed(2)} budget
+                    {formatAmount(analyticsData.totalBudget)} budget
                   </p>
                 </div>
 
                 <div className="summary-card">
                   <h3>Remaining Budget</h3>
-                  <p className="amount">£{(analyticsData.totalBudget - analyticsData.totalSpent).toFixed(2)}</p>
+                  <p className="amount">{formatAmount(analyticsData.totalBudget - analyticsData.totalSpent)}</p>
                   <div className="progress-bar">
                     <div 
                       className="progress-bar-fill remaining" 
@@ -308,7 +323,7 @@ function Analytics() {
                           tooltip: {
                             callbacks: {
                               label: function(context) {
-                                return `${context.dataset.label}: £${context.raw.toFixed(2)}`;
+                                return `${context.dataset.label}: ${formatAmount(context.raw)}`;
                               }
                             }
                           }
@@ -318,7 +333,7 @@ function Analytics() {
                             beginAtZero: true,
                             title: {
                               display: true,
-                              text: 'Amount (£)'
+                              text: `Amount (${currencySymbol})`
                             }
                           }
                         }
@@ -350,7 +365,7 @@ function Analytics() {
                                 const value = context.raw || 0;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = Math.round((value / total) * 100);
-                                return `${label}: £${value.toFixed(2)} (${percentage}%)`;
+                                return `${label}: ${formatAmount(value)} (${percentage}%)`;
                               }
                             }
                           }
@@ -378,7 +393,7 @@ function Analytics() {
                             tooltip: {
                               callbacks: {
                                 label: function(context) {
-                                  return `${context.dataset.label}: £${context.raw.toFixed(2)}`;
+                                  return `${context.dataset.label}: ${formatAmount(context.raw)}`;
                                 }
                               }
                             }
@@ -388,7 +403,7 @@ function Analytics() {
                               beginAtZero: true,
                               title: {
                                 display: true,
-                                text: 'Amount (£)'
+                                text: `Amount (${currencySymbol})`
                               }
                             },
                             x: {
@@ -421,22 +436,22 @@ function Analytics() {
                   <div className="trip-summary-cards">
                     <div className="trip-summary-card">
                       <h3>Total Budget</h3>
-                      <p className="amount">£{tripDetails.total_budget?.toFixed(2)}</p>
+                      <p className="amount">{formatAmount(tripDetails.total_budget)}</p>
                     </div>
                     <div className="trip-summary-card">
                       <h3>Total Spent</h3>
-                      <p className="amount">£{tripDetails.total_spent?.toFixed(2)}</p>
+                      <p className="amount">{formatAmount(tripDetails.total_spent)}</p>
                     </div>
                     <div className="trip-summary-card">
                       <h3>Remaining</h3>
-                      <p className="amount">£{(tripDetails.total_budget - tripDetails.total_spent)?.toFixed(2)}</p>
+                      <p className="amount">{formatAmount(tripDetails.total_budget - tripDetails.total_spent)}</p>
                     </div>
                     <div className="trip-summary-card">
                       <h3>Daily Average</h3>
-                      <p className="amount">£{(
+                      <p className="amount">{formatAmount(
                         tripDetails.total_spent / 
                         ((new Date(tripDetails.end_date) - new Date(tripDetails.start_date)) / (1000 * 60 * 60 * 24) + 1)
-                      )?.toFixed(2)}</p>
+                      )}</p>
                     </div>
                   </div>
 
@@ -456,7 +471,7 @@ function Analytics() {
                               tooltip: {
                                 callbacks: {
                                   label: function(context) {
-                                    return `${context.label}: £${context.raw.toFixed(2)}`;
+                                    return `${context.label}: ${formatAmount(context.raw)}`;
                                   }
                                 }
                               }
@@ -485,7 +500,7 @@ function Analytics() {
                                     const value = context.raw || 0;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = Math.round((value / total) * 100);
-                                    return `${label}: £${value.toFixed(2)} (${percentage}%)`;
+                                    return `${label}: ${formatAmount(value)} (${percentage}%)`;
                                   }
                                 }
                               }
@@ -511,7 +526,7 @@ function Analytics() {
                                 tooltip: {
                                   callbacks: {
                                     label: function(context) {
-                                      return `${context.dataset.label}: £${context.raw.toFixed(2)}`;
+                                      return `${context.dataset.label}: ${formatAmount(context.raw)}`;
                                     }
                                   }
                                 }
@@ -521,7 +536,7 @@ function Analytics() {
                                   beginAtZero: true,
                                   title: {
                                     display: true,
-                                    text: 'Amount (£)'
+                                    text: `Amount (${currencySymbol})`
                                   }
                                 },
                                 x: {
@@ -546,9 +561,6 @@ function Analytics() {
             </div>
           )}
         </div>
-      </div>
-      <div className="footer">
-        <p>&copy; SmartTravel. All rights reserved.</p>
       </div>
     </div>
   );

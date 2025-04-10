@@ -9,6 +9,8 @@ import Trip from "./pages/Trip";
 import Expense from "./pages/Expense";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import Layout from "./components/Navigation/Layout";
+
 
 function Logout() {
   localStorage.clear();
@@ -24,50 +26,26 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
+        {/* Public routes (without layout) */}
         <Route path="/login" element={<Login />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/register" element={<RegisterAndLogout />} />
+        
+        {/* Protected routes with Layout */}
+        <Route element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route path="/" element={<Home />} />
+          <Route path="/trips" element={<Trip />} />
+          <Route path="/expenses" element={<Expense />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
+        
+        {/* 404 route */}
         <Route path="*" element={<NotFound />} />
-        <Route
-          path="/trips"
-          element={
-            <ProtectedRoute>
-              <Trip />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/expenses"
-          element={
-            <ProtectedRoute>
-              <Expense />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analytics"
-          element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
       </Routes>
     </BrowserRouter>
   );

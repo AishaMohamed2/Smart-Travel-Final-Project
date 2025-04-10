@@ -159,59 +159,27 @@
     display: block;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .settings-container {
-        padding: 20px;
-    }
-    
-    .settings-container h1 {
-        font-size: 1.8rem;
-    }
-    
-    .settings-container h2 {
-        font-size: 1.5rem;
-    }
-    
-    .settings-section h3 {
-        font-size: 1.2rem;
-    }
-    
-    .settings-actions {
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .save-btn,
-    .delete-btn {
-        width: 100%;
-    }
-}
 
-@media (max-width: 480px) {
-    .settings-container {
-        padding: 15px;
-    }
-    
-    .settings-container h1 {
-        font-size: 1.6rem;
-    }
-    
-    .settings-container h2 {
-        font-size: 1.3rem;
-    }
-    
-    .settings-subtitle {
-        font-size: 1rem;
-    }
-    
-    .form-group input,
-    .form-group select {
-        padding: 8px 10px;
-    }
-    
-    .save-btn,
-    .delete-btn {
-        padding: 8px 20px;
-    }
-}
+.city-select__control--is-focused {
+    border-color: #0f172a !important;
+    box-shadow: 0 0 0 1px #0f172a !important;
+  }
+  
+
+  .city-select__option--is-focused {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+  
+
+  .city-select__option--is-selected {
+    background-color: #0f172a !important;
+    color: white !important;
+  }
+  
+
+  .city-select__dropdown-indicator:hover {
+    color: #475569 !important;
+  }
+
+

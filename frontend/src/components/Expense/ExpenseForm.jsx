@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import "../../styles/Expense/ExpenseForm.css";
+import LoadingIndicator from "../LoadingIndicator"; 
 
 function ExpenseForm({
   editingExpenseId,
@@ -20,10 +21,20 @@ function ExpenseForm({
   // Get the selected trip details
   const selectedTripDetails = trips.find(trip => trip.id === Number(selectedTrip));
 
+  // State to manage loading status
+  const [loading, setLoading] = useState(false);
+
+  // Handle form submission with loading state
+  const handleFormSubmit = async (e) => {
+    setLoading(true);
+    await handleSubmit(e); 
+    setLoading(false);
+  };
+
   return (
     <div className="expense-form">
       <h2>{editingExpenseId ? "Edit Expense" : "Add Expense"}</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleFormSubmit}>
         <div className="form-group">
           <label>Trip</label>
           <select 
@@ -34,14 +45,14 @@ function ExpenseForm({
             <option value="">Select a trip</option>
             {trips.map((trip) => (
               <option key={trip.id} value={trip.id}>
-                {trip.trip_name} ({trip.start_date} to {trip.end_date}) - Budget: £{trip.total_budget}
+                {trip.trip_name} ({trip.start_date} to {trip.end_date})
               </option>
             ))}
           </select>
         </div>
 
         <div className="form-group">
-          <label>Amount (£)</label>
+          <label>Amount</label>
           <input 
             type="number" 
             value={amount} 
@@ -85,6 +96,9 @@ function ExpenseForm({
             <option value="other">Other</option>
           </select>
         </div>
+
+        {/* Show loading spinner while form is submitting */}
+        {loading && <LoadingIndicator />}
 
         <button type="submit">
           {editingExpenseId ? "Update Expense" : "Add Expense"}

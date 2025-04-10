@@ -1,54 +1,56 @@
 .expense-form {
-    width: 50%;
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .expense-form h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #1e293b;
-  }
-  
-  .form-group {
-    margin-bottom: 15px;
-  }
-  
-  .form-group label {
-    display: block;
-    font-size: 1rem;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #0f172a;
-  }
-  
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1rem;
-    background-color: #ffffff;
-  }
-  
-  .expense-form button {
-    width: 100%;
-    padding: 12px;
-    background-color: #0f172a;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1.1rem;
-    transition: background-color 0.3s;
-  }
-  
-  .expense-form button:hover {
-    background-color: #1e293b;
-  }
+  width: 50%;
+  max-width: 400px; /* Prevents the form from being too wide */
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: auto; /* Centers the form */
+}
 
-  
+.expense-form h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #1e293b;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #0f172a;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: calc(100% - 20px); /* Prevents overflow */
+  max-width: 100%; /* Ensures responsiveness */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: #ffffff;
+  box-sizing: border-box; /* Ensures padding doesn’t affect width */
+}
+
+.expense-form button {
+  width: 100%;
+  padding: 12px;
+  background-color: #0f172a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: background-color 0.3s;
+}
+
+.expense-form button:hover {
+  background-color: #1e293b;
+}

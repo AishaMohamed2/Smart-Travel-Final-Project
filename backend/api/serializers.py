@@ -2,67 +2,85 @@ from rest_framework import serializers
 from .models import CustomUser, Trip, Expense
 from django.utils import timezone
 
-# Serializer for the CustomUser model
+# USER SERIALIZER
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "password", "first_name", "last_name"]
-        extra_kwargs = {"password": {"write_only": True}}  # Ensure password is write-only
+        fields = ["id", "email", "password", "first_name", "last_name", "currency"]
+        extra_kwargs = {
+            "password": {
+                "write_only": True,  # Never show password in API responses
+                "style": {"input_type": "password"}  # Makes browsable API hide password
+            }
+        }
 
     def create(self, validated_data):
+        """Creates a user with hashed password."""
         password = validated_data.pop("password", None)
         user = CustomUser(**validated_data)
         if password:
-            user.set_password(password)  # Hash the password before saving
+            user.set_password(password)  # Securely hash password
         user.save()
         return user
 
-    
-    def get_full_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}"
-
     def update(self, instance, validated_data):
-        # Remove password from validated_data if it exists
-        validated_data.pop('password', None)
+        """Prevents password updates via this endpoint."""
+        validated_data.pop("password", None)  # Ignore password if sent
         return super().update(instance, validated_data)
-    
 
-    
-    
 
-# Serializer for the Trip model
+# TRIP SERIALIZER
 class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
         fields = [
-            "id", "trip_name", "destination", "start_date", "end_date", 
+            "id", "trip_name", "destination", "start_date", "end_date",
             "total_budget", "traveler_type", "savings"
         ]
 
     def validate(self, data):
-        # Ensure start date is before end date
-        if "start_date" in data and "end_date" in data:
-            if data["start_date"] > data["end_date"]:
-                raise serializers.ValidationError("The start date cannot be after the end date.")
+        """Checks trip date logic."""
+        start_date = data.get("start_date")
+        end_date = data.get("end_date")
+        
+        if start_date and end_date and (start_date > end_date):
+            raise serializers.ValidationError(
+                {"The start date cannot be after the end date."}  # More descriptive error
+            )
         return data
 
-# Serializer for the Expense model
+
+# EXPENSE SERIALIZER
 class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Expense
         fields = ["id", "trip", "amount", "date", "category", "description"]
 
     def validate(self, data):
+        """Ensures expenses align with trip dates."""
         trip = data.get("trip")
         expense_date = data.get("date")
-
-        # Ensure the expense date is within the trip's start and end dates
-        if expense_date < trip.start_date or expense_date > trip.end_date:
-            raise serializers.ValidationError("The expense date must be within the trip's start and end dates.")
-
-        # Ensure the trip is currently happening
         today = timezone.now().date()
-        if trip.start_date > today or trip.end_date < today:
-            raise serializers.ValidationError("Expenses can only be added for trips that are currently happening.")
+
+        if not trip:
+            return data  # Skip if trip isn't provided
+
+        # Date checks
+        if expense_date < trip.start_date:
+            raise serializers.ValidationError(
+                {"date": "Expense can't be before the trip starts."}
+            )
+        if expense_date > trip.end_date:
+            raise serializers.ValidationError(
+                {"date": "Expense can't be after the trip ends."}
+            )
+        if trip.start_date > today:
+            raise serializers.ValidationError(
+                {"trip": "Can't add expenses to future trips."}
+            )
+        if trip.end_date < today:
+            raise serializers.ValidationError(
+                {"trip": "Can't add expenses to completed trips."}
+            )
 
         return data

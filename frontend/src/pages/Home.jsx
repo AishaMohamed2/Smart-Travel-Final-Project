@@ -1,43 +1,49 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { FiPlus, FiHome, FiMap, FiDollarSign, FiPieChart, FiSettings, FiLogOut } from "react-icons/fi";
 import api from "../api";
 import "../styles/Home.css";
+import { IoPersonOutline } from "react-icons/io5";
+import { useCurrency } from '../utils/useCurrency';
 
 function Home() {
     const [upcomingTrips, setUpcomingTrips] = useState([]);
     const [recentExpenses, setRecentExpenses] = useState([]);
+    const [totalBudget, setTotalBudget] = useState(0);
+    const [totalSpent, setTotalSpent] = useState(0);
     const navigate = useNavigate();
+    const { formatAmount, currencySymbol } = useCurrency();
 
     useEffect(() => {
-        const fetchTrips = async () => {
+        const fetchData = async () => {
             try {
-                const response = await api.get("/api/trips/");
+                // Fetch trips
+                const tripsResponse = await api.get("/api/trips/");
                 const today = new Date();
-
+                
                 // Filter out trips that have already ended
-                const filteredTrips = response.data.filter(trip => new Date(trip.end_date) >= today);
-
+                const filteredTrips = tripsResponse.data.filter(trip => new Date(trip.end_date) >= today);
+                
                 // Sort trips by start date (earliest first)
                 const sortedTrips = filteredTrips.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-
                 setUpcomingTrips(sortedTrips.slice(0, 4));
+                
+                // Calculate total budget from upcoming trips
+                const budgetSum = sortedTrips.reduce((sum, trip) => sum + parseFloat(trip.total_budget || 0), 0);
+                setTotalBudget(budgetSum);
+
+                // Fetch expenses
+                const expensesResponse = await api.get("/api/expenses/");
+                setRecentExpenses(expensesResponse.data.slice(0, 10)); // Show 10 most recent expenses
+                
+                // Calculate total spent from expenses
+                const spentSum = expensesResponse.data.reduce((sum, expense) => sum + parseFloat(expense.amount || 0), 0);
+                setTotalSpent(spentSum);
             } catch (error) {
-                console.error("Error fetching trips:", error);
+                console.error("Error fetching data:", error);
             }
         };
 
-        const fetchExpenses = async () => {
-            try {
-                const response = await api.get("/api/expenses/");
-                setRecentExpenses(response.data.slice(0, 10)); // Show 5 most recent expenses
-            } catch (error) {
-                console.error("Error fetching expenses:", error);
-            }
-        };
-
-        fetchTrips();
-        fetchExpenses();
+        fetchData();
     }, []);
 
     const calculateTripStatus = (startDate, endDate) => {
@@ -54,46 +60,18 @@ function Home() {
         } 
     };
 
-    const handleLogout = () => {
-        // Clear any stored authentication data (like token) or session
-        localStorage.removeItem("authToken"); // Adjust this based on your app's storage
-        sessionStorage.removeItem("authToken");
-        navigate("/login"); // Redirect to login page after logout
+    const calculatePercentage = (value, total) => {
+        return total > 0 ? Math.min(100, Math.round((value / total) * 100)) : 0;
     };
 
     return (
         <div className="home-container">
-              <div className="sidebar">
-                          <h2>SmartTravel</h2>
-                          <NavLink to="/" className={({ isActive }) => (isActive ? "active" : "")}>
-                              <FiHome /> Dashboard
-                          </NavLink>
-                          <NavLink to="/trips" className={({ isActive }) => (isActive ? "active" : "")}>
-                              <FiMap /> Add Trip
-                          </NavLink>
-                          <NavLink to="/expenses" className={({ isActive }) => (isActive ? "active" : "")}>
-                              <FiDollarSign /> Add Expense
-                          </NavLink>
-                          <NavLink to="/analytics" className={({ isActive }) => (isActive ? "active" : "")}>
-                              <FiPieChart /> Analytics
-                          </NavLink>
-                          <NavLink to="/settings" className={({ isActive }) => (isActive ? "active" : "")}>
-                              <FiSettings /> Settings
-                          </NavLink>
-
-
-                {/* Logout Button */}
-                <button className="logout-btn" onClick={handleLogout}>
-                    <FiLogOut /> Logout
-                </button>
-            </div>
-
             {/* Main Content */}
             <div className="main-content">
                 <div className="dashboard-header">
                     <h2>Dashboard</h2>
-                    <button className="add-expense-btn" onClick={() => navigate("/trips")}>
-                        <FiPlus /> Add Trip
+                    <button className="settings-circle-btn" onClick={() => navigate("/settings")}>
+                        <IoPersonOutline />
                     </button>
                 </div>
 
@@ -101,18 +79,27 @@ function Home() {
                 <div className="budget-summary">
                     <div className="budget-card">
                         <h3>Total Budget</h3>
-                        <p>£5,000</p>
+                        <p>{formatAmount(totalBudget)}</p>
                         <div className="progress-bar">
-                            <div style={{ width: '75%' }}></div>
+                            <div 
+                                className="progress-bar-fill" 
+                                style={{ width: `${calculatePercentage(totalSpent, totalBudget)}%` }}
+                            ></div>
                         </div>
+                        <p className="budget-text">
+                            {calculatePercentage(totalSpent, totalBudget)}% spent
+                        </p>
                     </div>
                     <div className="budget-card">
                         <h3>Spent Amount</h3>
-                        <p>£3,750</p>
+                        <p>{formatAmount(totalSpent)}</p>
                     </div>
                     <div className="budget-card">
                         <h3>Remaining</h3>
-                        <p>£1,250</p>
+                        <p>{formatAmount(totalBudget - totalSpent)}</p>
+                        <p className="budget-text">
+                            {calculatePercentage(totalBudget - totalSpent, totalBudget)}% remaining
+                        </p>
                     </div>
                 </div>
 
@@ -134,7 +121,7 @@ function Home() {
                                     <td>{expense.date}</td>
                                     <td><span className="category-badge">{expense.category}</span></td>
                                     <td>{expense.description}</td>
-                                    <td>£{expense.amount}</td>
+                                    <td>{formatAmount(expense.amount)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -152,16 +139,11 @@ function Home() {
                                     <span className="trip-badge">{calculateTripStatus(trip.start_date, trip.end_date)}</span>
                                 </div>
                                 <p>{trip.start_date} - {trip.end_date}</p>
-                                <p>Budget: £{trip.total_budget}</p>
+                                <p>Budget: {formatAmount(trip.total_budget)}</p>
                             </div>
                         ))}
                     </div>
                 </div>
-            </div>
-
-            {/* Footer */}
-            <div className="footer">
-                <p>&copy; SmartTravel. All rights reserved.</p>
             </div>
         </div>
     );

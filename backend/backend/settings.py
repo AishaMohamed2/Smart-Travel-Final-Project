@@ -104,7 +104,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'smarttraveldatabase',  
         'USER': 'postgres',  
-        'PASSWORD': 'Queen2016.',  
+        'PASSWORD': 'DatabasePassword',  
         'HOST': 'localhost',  
         'PORT': '5432',  
     }
@@ -154,5 +154,5 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWS_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = True
 

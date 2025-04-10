@@ -1,58 +1,176 @@
 .trip-form {
-    width: 50%;
+    width: 100%;
+    max-width: 500px;
     background-color: #ffffff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    margin: 30px auto;
 }
 
 .trip-form h2 {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     color: #1e293b;
+    font-size: 2rem;
+    font-weight: 600;
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 25px;
 }
 
 .form-group label {
     display: block;
     font-size: 1rem;
-    font-weight: bold;
-    margin-bottom: 5px;
+    font-weight: 600;
+    margin-bottom: 10px;
     color: #0f172a;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
     font-size: 1rem;
     background-color: #ffffff;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    color: #0f172a;
+    font-family: inherit;
+    min-height: 48px;
 }
 
-.trip-form button {
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Budget Recommendation Section */
+.budget-recommendation {
+    margin: 25px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #0f172a;
+}
+
+.budget-recommendation h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #0f172a;
+    font-size: 1.2rem;
+}
+
+.budget-recommendation ul {
+    padding-left: 20px;
+    margin: 10px 0;
+}
+
+.budget-recommendation li {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.budget-recommendation p {
+    margin: 10px 0;
+    font-size: 0.95rem;
+}
+
+.budget-recommendation strong {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.apply-recommendation-btn {
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.apply-recommendation-btn:hover {
+    background: #1e293b;
+}
+
+/* Budget Adjustment */
+.budget-adjustment {
+    margin-top: 15px;
+}
+
+.budget-adjustment label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.budget-adjustment input[type="range"] {
     width: 100%;
-    padding: 12px;
+    height: 8px;
+    border-radius: 4px;
+    background: #e2e8f0;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.budget-adjustment input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #0f172a;
+    cursor: pointer;
+}
+
+/* Submit Button */
+.submit-btn {
+    width: 100%;
+    padding: 16px;
     background-color: #0f172a;
     color: white;
     border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    border-radius: 8px;
     font-size: 1.1rem;
-    transition: background-color 0.3s;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background 0.2s;
 }
 
-.trip-form button:hover {
+.submit-btn:hover {
     background-color: #1e293b;
 }
 
 .validation-error {
-    color: #ef4444;
-    margin-top: 15px;
+    color: #dc2626;
+    margin-top: 20px;
     text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    padding: 12px;
+    background-color: #fee2e2;
+    border-radius: 8px;
+    border: 1px solid #fca5a5;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .trip-form {
+        padding: 20px;
+    }
+    
+    .trip-form h2 {
+        font-size: 1.5rem;
+    }
+    
+    .budget-recommendation {
+        padding: 15px;
+    }
 }

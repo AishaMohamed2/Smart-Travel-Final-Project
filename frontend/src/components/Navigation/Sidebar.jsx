@@ -1,6 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { FiHome, FiMap, FiDollarSign, FiPieChart, FiSettings, FiLogOut } from "react-icons/fi";
+import "../../styles/Navigation/Sidebar.css";  
 
 function Sidebar({ onLogout }) {
   return (
@@ -27,3 +28,4 @@ function Sidebar({ onLogout }) {
 }
 
 export default Sidebar;
+

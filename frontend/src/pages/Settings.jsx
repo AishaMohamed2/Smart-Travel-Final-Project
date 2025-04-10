@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
 import api from '../api';
-import Sidebar from '../components/Navigation/Sidebar';
 import '../styles/Settings.css';
+import currencies from '../data/currencies';
 
 function Settings() {
   const [formData, setFormData] = useState({
@@ -11,30 +12,41 @@ function Settings() {
     email: '',
     newPassword: '',
     confirmPassword: '',
-    currency: 'USD'
+    currency: 'GBP' 
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
+  
+  const currencyOptions = currencies.map(currency => ({
+    value: currency.code,
+    label: `${currency.code} - ${currency.name}`,
+    ...currency
+  }));
+
+
+  const selectedCurrency = currencyOptions.find(
+    option => option.value === formData.currency
+  ) || currencyOptions.find(option => option.value === 'GBP');
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await api.get('/api/user/'); // Corrected endpoint
-        console.log('User data response:', response.data); // Debug log
-        
+        const response = await api.get('/api/user/');
         const { first_name, last_name, email, currency } = response.data;
+        
         setFormData(prev => ({
           ...prev,
           firstName: first_name || '',
           lastName: last_name || '',
           email: email || '',
-          currency: currency || 'USD'
+          currency: currency || 'GBP'
         }));
       } catch (err) {
-        console.error('Detailed fetch error:', err.response || err);
-        setError(err.response?.data?.detail || 'Failed to load user data. Please try again later.');
+        console.error('Error fetching user data:', err);
+        setError('Failed to load user data. Using default settings.');
       } finally {
         setLoading(false);
       }
@@ -48,6 +60,13 @@ function Settings() {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleCurrencyChange = (selectedOption) => {
+    setFormData(prev => ({
+      ...prev,
+      currency: selectedOption.value
     }));
   };
 
@@ -67,6 +86,7 @@ function Settings() {
       const updateData = {
         first_name: formData.firstName,
         last_name: formData.lastName,
+        email: formData.email,
         currency: formData.currency
       };
 
@@ -74,9 +94,7 @@ function Settings() {
         updateData.password = formData.newPassword;
       }
 
-      const response = await api.patch('/api/user/update/', updateData); // Corrected endpoint
-      console.log('Update response:', response.data); // Debug log
-      
+      const response = await api.patch('/api/user/update/', updateData);
       setSuccess('Settings saved successfully');
       setFormData(prev => ({
         ...prev,
@@ -84,8 +102,7 @@ function Settings() {
         confirmPassword: ''
       }));
     } catch (err) {
-      console.error('Detailed update error:', err.response || err);
-      setError(err.response?.data?.detail || 'Failed to save settings. Please try again.');
+      setError(err.response?.data?.detail || 'Failed to save settings.');
     } finally {
       setLoading(false);
     }
@@ -95,7 +112,7 @@ function Settings() {
     if (window.confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) {
       try {
         setLoading(true);
-        await api.delete('/api/user/delete/'); // Corrected endpoint
+        await api.delete('/api/user/delete/');
         localStorage.clear();
         navigate('/login');
       } catch (err) {
@@ -110,7 +127,6 @@ function Settings() {
   if (loading) {
     return (
       <div className="settings-page-container">
-        <Sidebar />
         <div className="main-content">
           <div className="loading-spinner"></div>
         </div>
@@ -120,7 +136,6 @@ function Settings() {
 
   return (
     <div className="settings-page-container">
-      <Sidebar />
       <div className="main-content">
         <div className="settings-container">
           <h1>Settings</h1>
@@ -158,8 +173,8 @@ function Settings() {
                   type="email"
                   name="email"
                   value={formData.email}
-                  readOnly
-                  className="read-only-input"
+                  onChange={handleChange}
+                  required
                 />
               </div>
               <div className="form-group">
@@ -186,21 +201,18 @@ function Settings() {
               )}
             </div>
 
-            <div className="settings-section">
-              <h3>Currency Preferences</h3>
-              <div className="form-group">
-                <label>Default Currency</label>
-                <select
-                  name="currency"
-                  value={formData.currency}
-                  onChange={handleChange}
-                >
-                  <option value="USD">USD - US Dollar</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="GBP">GBP - British Pound</option>
-                  <option value="JPY">JPY - Japanese Yen</option>
-                </select>
-              </div>
+            <div className="form-group">
+              <label>Currency</label>
+              <Select
+                className="city-select"
+                classNamePrefix="city-select"
+                value={selectedCurrency}
+                onChange={handleCurrencyChange}
+                options={currencyOptions}
+                placeholder="Search currency..."
+                isSearchable
+                noOptionsMessage={() => "No currencies found"}
+              />
             </div>
 
             <div className="settings-actions">

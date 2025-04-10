@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import api from "../api";
-import Sidebar from "../components/Navigation/Sidebar";
 import ExpenseForm from "../components/Expense/ExpenseForm";
 import ExpenseList from "../components/Expense/ExpenseList";
 import "../styles/Expense/Expense.css";
+import { useCurrency } from '../utils/useCurrency';
 
+// Main Expense component
 function Expense() {
+  // State hooks to manage form inputs and expenses
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [category, setCategory] = useState("food");
@@ -17,17 +19,18 @@ function Expense() {
   const [selectedTrip, setSelectedTrip] = useState("");
   const [currentTrip, setCurrentTrip] = useState(null);
   const [totalSpent, setTotalSpent] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const { formatAmount } = useCurrency();
 
+  // Fetching trips and expenses data from API 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsLoading(true);
         const [tripsResponse, expensesResponse] = await Promise.all([
           api.get("/api/trips/"),
           api.get("/api/expenses/")
         ]);
 
+        // Filter trips to show only those that are ongoing
         const today = new Date().toISOString().split("T")[0];
         const currentTrips = tripsResponse.data.filter((trip) => {
           const startDate = new Date(trip.start_date);
@@ -39,21 +42,20 @@ function Expense() {
         setTrips(currentTrips);
         setExpenses(expensesResponse.data);
 
+        // Automatically select the only ongoing trip if there is exactly one
         if (currentTrips.length === 1) {
           setSelectedTrip(currentTrips[0].id.toString());
           setCurrentTrip(currentTrips[0]);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError("Failed to load data. Please refresh the page.");
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
+  // Calculate the total amount spent for the selected trip
   useEffect(() => {
     if (selectedTrip && expenses.length > 0) {
       const tripId = Number(selectedTrip);
@@ -63,12 +65,15 @@ function Expense() {
     }
   }, [selectedTrip, expenses]);
 
+  // Calculate remaining budget for the selected trip
   const remainingBudget = currentTrip ? parseFloat(currentTrip.total_budget || 0) - totalSpent : 0;
 
+  // Handle form submission to add or update an expense
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
+    // Validate trip selection
     if (!selectedTrip) {
       setError("Please select a valid trip.");
       return;
@@ -82,17 +87,20 @@ function Expense() {
       return;
     }
 
-    if (!amount || isNaN(amount)) {  // Added missing closing parenthesis
-        setError("Please enter a valid amount.");
-        return;
-      }
+    // Validate amount input
+    if (!amount || isNaN(amount)) {
+      setError("Please enter a valid amount.");
+      return;
+    }
 
+    // Validate date input
     if (!date) {
       setError("Please select a date.");
       return;
     }
 
     try {
+      // Prepare expense data
       const expenseData = {
         trip: tripId,
         amount: parseFloat(amount),
@@ -102,6 +110,7 @@ function Expense() {
       };
 
       let updatedExpenses = [];
+      // If editing an existing expense, update it; otherwise, create a new one
       if (editingExpenseId) {
         const response = await api.put(`/api/expenses/${editingExpenseId}/update/`, expenseData);
         updatedExpenses = expenses.map((expense) => 
@@ -121,6 +130,7 @@ function Expense() {
     }
   };
 
+  // Reset the form after submission or editing
   const resetForm = () => {
     setAmount("");
     setDate("");
@@ -129,6 +139,7 @@ function Expense() {
     setError("");
   };
 
+  // Prepare the form for editing an existing expense
   const handleEditExpense = (expense) => {
     setEditingExpenseId(expense.id);
     setSelectedTrip(expense.trip.toString());
@@ -138,6 +149,7 @@ function Expense() {
     setDescription(expense.description);
   };
 
+  // Handle deleting an expense
   const handleDeleteExpense = async (expenseId) => {
     try {
       await api.delete(`/api/expenses/${expenseId}/`);
@@ -148,37 +160,24 @@ function Expense() {
     }
   };
 
+  // Handle trip selection change
   const handleTripChange = (tripId) => {
     setSelectedTrip(tripId);
     const selected = trips.find(trip => trip.id === Number(tripId));
     setCurrentTrip(selected);
   };
 
-  if (isLoading) {
-    return (
-      <div className="expense-page-container">
-        <Sidebar />
-        <div className="main-content">
-          <div className="expense-container">
-            <p>Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="expense-page-container">
-      <Sidebar />
       <div className="main-content">
         <div className="expense-container">
           {currentTrip && (
             <div className="budget-bar-container">
               <h3>{currentTrip.trip_name} Budget</h3>
               <div className="budget-info">
-                <span>Total: £{currentTrip.total_budget}</span>
-                <span>Spent: £{totalSpent.toFixed(2)}</span>
-                <span>Remaining: £{remainingBudget.toFixed(2)}</span>
+                 <span>Total: {formatAmount(currentTrip.total_budget)}</span>
+                 <span>Spent: {formatAmount(totalSpent)}</span>
+                 <span>Remaining: {formatAmount(remainingBudget)}</span>
               </div>
               <div className="budget-bar">
                 <div 
@@ -192,7 +191,7 @@ function Expense() {
               </div>
               {remainingBudget < 0 && (
                 <div className="budget-message error">
-                  You've exceeded your budget by £{Math.abs(remainingBudget).toFixed(2)}!
+                  You've exceeded your budget by {formatAmount(Math.abs(remainingBudget))}!
                 </div>
               )}
             </div>
@@ -225,13 +224,7 @@ function Expense() {
           </div>
         </div>
       </div>
-       {/* Footer */}
-       <div className="footer">
-                <p>&copy; SmartTravel. All rights reserved.</p>
-            </div>
     </div>
-
-    
   );
 }
 

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
-import Sidebar from "../components/Navigation/Sidebar";
 import TripForm from "../components/Trip/TripForm";
 import TripList from "../components/Trip/TripList";
 import "../styles/Trip/Trip.css";
+import { useCurrency } from '../utils/useCurrency';
 
 function Trip() {
     const [tripName, setTripName] = useState("");
@@ -18,13 +18,10 @@ function Trip() {
     const [trips, setTrips] = useState([]);
     const [editingTripId, setEditingTripId] = useState(null);
     const [validationError, setValidationError] = useState("");
+    const [recommendedBudget, setRecommendedBudget] = useState(null);
+    const [loadingRecommendation, setLoadingRecommendation] = useState(false);
     const navigate = useNavigate();
-    
-    const budgetLimits = {
-        luxury: Infinity,
-        medium: 200,
-        budget: 100,
-    };
+    const { formatAmount } = useCurrency();
 
     useEffect(() => {
         const fetchTrips = async () => {
@@ -37,6 +34,39 @@ function Trip() {
         };
         fetchTrips();
     }, []);
+
+    const calculateDuration = (start, end) => {
+        if (!start || !end) return 0;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        return Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    };
+
+    useEffect(() => {
+        const duration = calculateDuration(startDate, endDate);
+        if (destination && travelerType && duration > 0) {
+            fetchBudgetRecommendation(destination, travelerType, duration);
+        } else {
+            setRecommendedBudget(null);
+        }
+    }, [destination, travelerType, startDate, endDate]);
+
+    const fetchBudgetRecommendation = async (city, type, days) => {
+        setLoadingRecommendation(true);
+        try {
+            const response = await api.post('/api/budget-recommendation/', {
+                city,
+                traveler_type: type,
+                duration: days
+            });
+            setRecommendedBudget(response.data);
+        } catch (error) {
+            console.error("Budget recommendation failed:", error);
+            setRecommendedBudget(null);
+        } finally {
+            setLoadingRecommendation(false);
+        }
+    };
 
     const handleStartDateChange = (e) => {
         const newStartDate = e.target.value;
@@ -58,20 +88,14 @@ function Trip() {
 
     const handleTotalBudgetChange = (e) => {
         const newBudget = parseFloat(e.target.value);
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const tripDuration = startDate && endDate ? (end - start) / (1000 * 60 * 60 * 24) + 1 : 1;
-
-        if (travelerType && travelerType !== "luxury") {
-            const maxBudgetPerDay = budgetLimits[travelerType];
-            const maxTotalBudget = maxBudgetPerDay * tripDuration;
-            if (newBudget > maxTotalBudget) {
-                setValidationError(`Total budget exceeds the limit for a ${travelerType} traveller. The maximum budget for your trip is £${maxTotalBudget}.`);
-                return;
-            }
-        }
         setValidationError("");
         setTotalBudget(newBudget);
+    };
+
+    const applyRecommendedBudget = () => {
+        if (recommendedBudget) {
+            setTotalBudget(recommendedBudget.total_budget);
+        }
     };
 
     const handleDeleteTrip = async (tripId) => {
@@ -112,28 +136,12 @@ function Trip() {
         const currentDate = new Date();
         currentDate.setHours(0, 0, 0, 0);
         const selectedEndDate = new Date(endDate);
-    
+        
         if (selectedEndDate < currentDate) {
             setValidationError("You cannot add a trip that has already ended.");
             return;
         }
-    
-        // Calculate trip duration
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const tripDuration = (end - start) / (1000 * 60 * 60 * 24) + 1;
-    
-        // Validate budget based on traveler type
-        if (travelerType !== "luxury") {
-            const maxBudgetPerDay = budgetLimits[travelerType];
-            const maxTotalBudget = maxBudgetPerDay * tripDuration;
-            
-            if (totalBudget > maxTotalBudget) {
-                setValidationError(`Total budget exceeds the limit for a ${travelerType} traveller. The maximum budget for your trip is £${maxTotalBudget.toFixed(2)}.`);
-                return;
-            }
-        }
-    
+        
         const tripData = {
             trip_name: tripName,
             destination,
@@ -141,9 +149,9 @@ function Trip() {
             end_date: endDate,
             total_budget: totalBudget,
             traveler_type: travelerType,
-            savings,
+            savings: savings || 0,
         };
-    
+        
         try {
             if (editingTripId) {
                 const response = await api.put(`/api/trips/${editingTripId}/update/`, tripData);
@@ -162,6 +170,7 @@ function Trip() {
             setTotalBudget(0);
             setTravelerType("");
             setSavings(0);
+            setRecommendedBudget(null);
         } catch (error) {
             console.error("Error details:", error.response ? error.response.data : error);
             setError("Failed to submit trip. Please try again.");
@@ -170,7 +179,6 @@ function Trip() {
 
     return (
         <div className="trip-page-container">
-            <Sidebar />
             <div className="main-content">
                 <div className="trip-container">
                     <div className="trip-layout">
@@ -192,18 +200,19 @@ function Trip() {
                             setTravelerType={setTravelerType}
                             setSavings={setSavings}
                             validationError={validationError}
+                            recommendedBudget={recommendedBudget}
+                            loadingRecommendation={loadingRecommendation}
+                            applyRecommendedBudget={applyRecommendedBudget}
                         />
                         <TripList
                             trips={trips}
                             handleEditTrip={handleEditTrip}
                             handleDeleteTrip={handleDeleteTrip}
+                            formatAmount={formatAmount}
                         />
                     </div>
                     {error && <p className="error-message">{error}</p>}
                 </div>
-            </div>
-            <div className="footer">
-                <p>&copy; SmartTravel. All rights reserved.</p>
             </div>
         </div>
     );

@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { FaTrash, FaEdit } from "react-icons/fa";
 import "../../styles/Expense/ExpenseList.css";
+import { useCurrency } from '../../utils/useCurrency';
 
 function ExpenseList({ expenses, handleEditExpense, handleDeleteExpense }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const { formatAmount } = useCurrency();
 
   const confirmDelete = (expenseId) => {
     if (window.confirm("Are you sure you want to delete this expense?")) {
@@ -42,14 +44,14 @@ function ExpenseList({ expenses, handleEditExpense, handleDeleteExpense }) {
 
       {/* Expense List */}
       {filteredExpenses.length === 0 ? (
-        <p>No expenses found for this category.</p>
+       <p className="no-expense-message">No expenses added</p>
       ) : (
         <ul>
           {filteredExpenses.map((expense) => (
             <li key={expense.id}>
               <div className="expense-details">
                 <h4>{expense.category}</h4>
-                <p>Amount: £{expense.amount}</p>
+                <p>Amount: {formatAmount(expense.amount)}</p>
                 <p>Date: {expense.date}</p>
                 <p>Description: {expense.description}</p>
               </div>

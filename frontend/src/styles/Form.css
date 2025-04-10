@@ -1,4 +1,3 @@
-/* Global styles for consistent layout behavior */
 html, body {
   margin: 0;
   padding: 0;
@@ -13,10 +12,9 @@ html, body {
   position: absolute;
   top: -60px;
   left: -20px;
-  width: 250px; /* Adjust size */
+  width: 250px; 
   height: auto;
 }
-
 
 /* Split Container */
 .login-container {

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { FaPlane, FaTrash, FaEdit } from "react-icons/fa";
 import "../../styles/Trip/TripList.css";
-
-function TripList({ trips, handleEditTrip, handleDeleteTrip }) {
+import { useCurrency } from '../../utils/useCurrency'; 
+function TripList({ trips, handleEditTrip, handleDeleteTrip}) {
   const [selectedTravelerType, setSelectedTravelerType] = useState("All");
+  const { formatAmount } = useCurrency();
 
   const confirmDelete = (tripId) => {
     if (window.confirm("Are you sure you want to delete this trip?")) {
@@ -42,7 +43,7 @@ function TripList({ trips, handleEditTrip, handleDeleteTrip }) {
 
       {/* Trip List */}
       {filteredTrips.length === 0 ? (
-        <p className="no-trips-message">No trips found for this traveler type.</p>
+        <p className="no-trips-message">No trips found</p>
       ) : (
         <ul className="trip-list-items">
           {filteredTrips.map((trip) => (
@@ -55,7 +56,7 @@ function TripList({ trips, handleEditTrip, handleDeleteTrip }) {
                 <p>Destination: {trip.destination}</p>
                 <p>Start Date: {trip.start_date}</p>
                 <p>End Date: {trip.end_date}</p>
-                <p>Total Budget: £{trip.total_budget}</p>
+                <p>Total Budget: {formatAmount(trip.total_budget)}</p>
                 <p>Traveller Type: {trip.traveler_type}</p>
               </div>
               <div className="trip-actions">
