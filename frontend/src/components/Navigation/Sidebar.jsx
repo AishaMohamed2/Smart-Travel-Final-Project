@@ -1,9 +1,24 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { FiHome, FiMap, FiDollarSign, FiPieChart, FiSettings, FiLogOut } from "react-icons/fi";
 import "../../styles/Navigation/Sidebar.css";  
+import { ACCESS_TOKEN } from "../../constants";
+import React, { useState, useEffect } from "react";
 
-function Sidebar({ onLogout }) {
+function Sidebar() {
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Added the state variable
+
+  useEffect(() => {
+      const token = localStorage.getItem(ACCESS_TOKEN);
+      setIsLoggedIn(token !== null);
+  }, []);
+
+  const handleLogout = () => {
+      localStorage.clear();
+      setIsLoggedIn(false);
+      navigate("/login");
+  };
+
   return (
     <div className="sidebar">
       <h2>SmartTravel</h2>
@@ -23,9 +38,11 @@ function Sidebar({ onLogout }) {
         <FiSettings /> Settings
       </NavLink>
 
+      <button className="logout-button" onClick={handleLogout}>
+        <FiLogOut /> Logout
+      </button>
     </div>
   );
 }
 
 export default Sidebar;
-

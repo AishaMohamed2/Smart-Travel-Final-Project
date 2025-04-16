@@ -54,6 +54,7 @@ function ExpenseList({ expenses, handleEditExpense, handleDeleteExpense }) {
                 <p>Amount: {formatAmount(expense.amount)}</p>
                 <p>Date: {expense.date}</p>
                 <p>Description: {expense.description}</p>
+                <p>Category: {expense.category}</p>
               </div>
               <button onClick={() => handleEditExpense(expense)} className="edit-button">
                 <FaEdit />

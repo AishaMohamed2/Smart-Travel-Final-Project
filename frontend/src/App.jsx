@@ -11,7 +11,6 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Layout from "./components/Navigation/Layout";
 
-
 function Logout() {
   localStorage.clear();
   return <Navigate to="/login" />;

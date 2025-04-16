@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Dropdown from './Dropdown';
 import '../../styles/Trip/TripForm.css';
-import api from '../../api';
-import LoadingIndicator from '../LoadingIndicator'; 
+import LoadingIndicator from '../LoadingIndicator';
 
 function TripForm({
   editingTripId,
@@ -21,13 +20,23 @@ function TripForm({
   setDestination,
   setTravelerType,
   setSavings,
-  validationError
+  validationError,
+  recommendedBudget,
+  applyRecommendedBudget
 }) {
-  const [recommendedBudget, setRecommendedBudget] = useState(null);
-  const [loadingRecommendation, setLoadingRecommendation] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [isBudgetValid, setIsBudgetValid] = useState(true);
+  const [showBudgetSection, setShowBudgetSection] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Calculate trip duration when dates change
+  useEffect(() => {
+    if (endDate) {
+      setShowBudgetSection(true);
+    } else {
+      setShowBudgetSection(false);
+    }
+  }, [endDate]);
+
   useEffect(() => {
     if (startDate && endDate) {
       const start = new Date(startDate);
@@ -37,47 +46,27 @@ function TripForm({
     }
   }, [startDate, endDate]);
 
-  // Fetch budget recommendation when city or traveler type changes
   useEffect(() => {
-    const fetchBudgetRecommendation = async () => {
-      if (!destination || !travelerType || !duration) return;
-
-      setLoadingRecommendation(true);
-      try {
-        const response = await api.post('/api/budget-recommendation/', {
-          city: destination,
-          traveler_type: travelerType,
-          duration: duration
-        });
-        
-        if (response.data) {
-          setRecommendedBudget(response.data);
-        } else {
-          setRecommendedBudget(null);
-        }
-      } catch (error) {
-        console.error("Budget recommendation failed:", error);
-        setRecommendedBudget(null);
-      } finally {
-        setLoadingRecommendation(false);
-      }
-    };
-
-    fetchBudgetRecommendation();
-  }, [destination, travelerType, duration]);
-
-  const applyRecommendedBudget = () => {
     if (recommendedBudget) {
-      handleTotalBudgetChange({
-        target: { value: recommendedBudget.total_budget.toFixed(2) }
-      });
+      const minAllowed = recommendedBudget.total_budget * 0.5;
+      const maxAllowed = recommendedBudget.total_budget * 1.5;
+      setIsBudgetValid(totalBudget >= minAllowed && totalBudget <= maxAllowed);
+    } else {
+      setIsBudgetValid(true);
     }
+  }, [totalBudget, recommendedBudget]);
+
+
+  const handleFormSubmit = async (e) => {
+    setLoading(true);
+    await handleSubmit(e);
+    setLoading(false);
   };
 
   return (
     <div className="trip-form">
       <h2>{editingTripId ? "Edit Your Trip" : "Add Trip"}</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleFormSubmit}>
         <div className="form-group">
           <label>Trip Name</label>
           <input
@@ -91,11 +80,12 @@ function TripForm({
         <div className="form-group">
           <label>City</label>
           <Dropdown
+            type="city"
             value={destination}
             onChange={(value) => {
               setDestination(value);
-              setRecommendedBudget(null); // Reset recommendation when city changes
             }}
+            placeholder="Select a city"
           />
         </div>
 
@@ -103,10 +93,7 @@ function TripForm({
           <label>Traveller Type</label>
           <select
             value={travelerType}
-            onChange={(e) => {
-              setTravelerType(e.target.value);
-              setRecommendedBudget(null); // Reset recommendation when type changes
-            }}
+            onChange={(e) => setTravelerType(e.target.value)}
             required
           >
             <option value="" disabled>Select traveller type</option>
@@ -137,81 +124,109 @@ function TripForm({
           />
         </div>
 
-        <div className="form-group">
-          <label>Savings</label>
-          <input
-            type="number"
-            value={savings}
-            onChange={(e) => setSavings(e.target.value)}
-            min="0"
-          />
-        </div>
+        {showBudgetSection && (
+          <>
+            <div className="form-group">
+              <label>Savings</label>
+              <input
+                type="number"
+                value={savings}
+                onChange={(e) => setSavings(e.target.value)}
+                min="0"
+                step="0.01"
+              />
+            </div>
 
-        <div className="form-group">
-          <label>Total Budget</label>
-          <input
-            type="number"
-            value={totalBudget}
-            onChange={handleTotalBudgetChange}
-            required
-            min="0"
-            step="0.01"
-
-          />
-        </div>
-
-        {/* Budget Recommendation Section */}
-        {destination && travelerType && duration > 0 && (
-          <div className="budget-recommendation">
-            <h4>Budget Recommendation</h4>
-            {loadingRecommendation ? (
-              <LoadingIndicator /> 
-            ) : recommendedBudget ? (
-              <>
-                <p>Based on {travelerType} travel in {destination}:</p>
-                <ul>
-                  {Object.entries(recommendedBudget.daily_breakdown).map(([category, amount]) => (
-                    <li key={category}>
-                      {category}: {amount.toFixed(2)} {recommendedBudget.currency}/day
-                    </li>
-                  ))}
-                </ul>
-                <p>Total for {duration} days: 
-                  <strong> {recommendedBudget.total_budget.toFixed(2)} {recommendedBudget.currency}</strong>
+            <div className="form-group">
+              <label>Total Budget</label>
+              <input
+                type="number"
+                value={totalBudget}
+                onChange={handleTotalBudgetChange}
+                required
+                min="0"
+                step="0.01"
+                className={!isBudgetValid && recommendedBudget ? 'invalid-budget' : ''}
+              />
+              {recommendedBudget && !isBudgetValid && (
+                <p className="validation-warning">
+                  Budget must be between {(recommendedBudget.total_budget * 0.5).toFixed(2)} and {(recommendedBudget.total_budget * 1.5).toFixed(2)} {recommendedBudget.currency}
                 </p>
-                <button 
-                  type="button" 
-                  onClick={applyRecommendedBudget}
-                  className="apply-recommendation-btn"
-                >
-                  Use Recommended Budget
-                </button>
-                <div className="budget-adjustment">
-                  <label>Adjust Budget (%):</label>
-                  <input
-                    type="range"
-                    min="50"
-                    max="150"
-                    defaultValue="100"
-                    onChange={(e) => {
-                      const adjustment = parseFloat(e.target.value) / 100;
-                      const adjustedBudget = recommendedBudget.total_budget * adjustment;
-                      handleTotalBudgetChange({
-                        target: { value: adjustedBudget.toFixed(2) }
-                      });
-                    }}
-                  />
-                </div>
-              </>
-            ) : (
-              <p>No recommendation available for this destination</p>
+              )}
+            </div>
+
+            {destination && travelerType && duration > 0 && (
+              <div className="budget-recommendation">
+                <h4>Budget Recommendation</h4>
+                {loading ? (
+                  <LoadingIndicator /> 
+                ) : recommendedBudget ? (
+                  <>
+                    <p>Based on {travelerType} travel in {destination}:</p>
+                    <ul>
+                      {Object.entries(recommendedBudget.daily_breakdown).map(([category, amount]) => (
+                        <li key={category}>
+                          {category}: {amount.toFixed(2)} {recommendedBudget.currency}/day
+                        </li>
+                      ))}
+                    </ul>
+                    <p>Total for {duration} days: 
+                      <strong> {recommendedBudget.total_budget.toFixed(2)} {recommendedBudget.currency}</strong>
+                    </p>
+                    <button 
+                      type="button" 
+                      onClick={applyRecommendedBudget}
+                      className="apply-recommendation-btn"
+                    >
+                      Use Recommended Budget
+                    </button>
+                    <div className="budget-adjustment">
+                      <label>Adjust Budget (%):</label>
+                      <input
+                        type="range"
+                        min="50"
+                        max="150"
+                        defaultValue="100"
+                        onChange={(e) => {
+                          const adjustment = parseFloat(e.target.value) / 100;
+                          const adjustedBudget = recommendedBudget.total_budget * adjustment;
+                          handleTotalBudgetChange({
+                            target: { value: adjustedBudget.toFixed(2) }
+                          });
+                        }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p>No recommendation available for this destination</p>
+                )}
+              </div>
             )}
-          </div>
+
+            {recommendedBudget && (
+              <div className="budget-range-indicator">
+                <p>Allowed budget range for {travelerType}:</p>
+                <p>
+                  {(recommendedBudget.total_budget * 0.5).toFixed(2)} - 
+                  {(recommendedBudget.total_budget * 1.5).toFixed(2)} 
+                  {recommendedBudget.currency}
+                </p>
+              </div>
+            )}
+          </>
         )}
 
-        <button type="submit" className="submit-btn">
+        <button 
+          type="submit" 
+          className="submit-btn"
+          disabled={(!isBudgetValid && showBudgetSection) || loading}
+        >
           {editingTripId ? "Update Trip" : "Add Trip"}
         </button>
+
+        {/* Show loading spinner while form is submitting */}
+        {loading && <LoadingIndicator />}
+
         {validationError && <p className="validation-error">{validationError}</p>}
       </form>
     </div>

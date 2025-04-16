@@ -1,3 +1,4 @@
+// src/components/Form.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
 import api from "../api";
@@ -5,9 +6,9 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import "../styles/Form.css";
 import LoadingIndicator from "./LoadingIndicator";
 import logo from "../assets/logo.png"; 
+import { validatePassword, getPasswordStrength } from "../utils/passwordUtils";
 
 function Form({ route, method }) {
-    // State variables for form fields and errors
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [firstName, setFirstName] = useState("");
@@ -15,16 +16,23 @@ function Form({ route, method }) {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [apiError, setApiError] = useState("");
-
+    const [isTypingPassword, setIsTypingPassword] = useState(false);
     const navigate = useNavigate(); 
     const name = method === "login" ? "Sign In" : "Sign Up";
 
-    // Validate form fields
     const validateForm = () => {
         let newErrors = {};
         
         if (!email.trim()) newErrors.email = "Email is required.";
-        if (!password.trim()) newErrors.password = "Password is required.";
+        
+        if (!password.trim()) {
+            newErrors.password = "Password is required.";
+        } else if (method === "register") {
+            const passwordValidation = validatePassword(password);
+            if (!passwordValidation.isValid) {
+                newErrors.password = passwordValidation.errors.join(" ");
+            }
+        }
 
         if (method === "register") {
             if (!firstName.trim()) newErrors.firstName = "First name is required.";
@@ -35,20 +43,17 @@ function Form({ route, method }) {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setApiError("");
 
-        // Validate the form before submitting
         if (!validateForm()) {
             setLoading(false);
             return;
         }
 
         try {
-            // Prepare data for the API request
             const data = method === "login"
                 ? { email, password }
                 : { email, password, first_name: firstName, last_name: lastName };
@@ -56,16 +61,13 @@ function Form({ route, method }) {
             const res = await api.post(route, data);
             
             if (method === "login") {
-                // Save tokens to local storage and navigate to the home page
                 localStorage.setItem(ACCESS_TOKEN, res.data.access);
                 localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
                 navigate("/");
             } else {
-                // Navigate to the login page after registration
                 navigate("/login");
             }
         } catch (error) {
-            // Handle API errors
             if (error.response && error.response.data) {
                 setApiError(error.response.data.detail || "An error occurred. Please try again.");
             } else {
@@ -79,7 +81,6 @@ function Form({ route, method }) {
     return (
         <div className="login-container">
             <div className="left-panel">
-                {/* Logo */}
                 <img src={logo} alt="Smart Travel Logo" className="logo" />
 
                 <div className="form-container">
@@ -125,20 +126,35 @@ function Form({ route, method }) {
                             />
                             {errors.email && <p className="error-text">{errors.email}</p>}
                         </div>
-
                         <div className="input-group">
-                            <input
-                                className={`form-input ${errors.password ? "error" : ""}`}
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Password"
-                            />
+                <input
+                    className={`form-input ${errors.password ? "error" : ""}`}
+                    type="password"
+                    value={password}
+                    onChange={(e) => {
+                        setPassword(e.target.value);
+                        setIsTypingPassword(e.target.value.length > 0);
+                    }}
+                    placeholder="Password"
+                />
+                {method === "register" && isTypingPassword && (
+                    <>
+                        <div className="password-strength-meter">
+                            <div 
+                                className={`strength-bar ${getPasswordStrength(password) > 0 ? "active" : ""}`}
+                                style={{width: `${getPasswordStrength(password) * 20}%`}}
+                            ></div>
+                        </div>
+                                    <div className="password-hint">
+                                        Password must contain: 8+ characters, uppercase, lowercase, number, and special character.
+                                    </div>
+                                </>
+                            )}
                             {errors.password && <p className="error-text">{errors.password}</p>}
                         </div>
 
                         <div className="form-links">
-                            <a href="#">Forgot password?</a>
+                            {method === "login" && <a href="#">Forgot password?</a>}
                         </div>
 
                         {loading && <LoadingIndicator />}
@@ -148,13 +164,13 @@ function Form({ route, method }) {
                         </button>
 
                         <p className="signup-link">
-                            Don't have an account?{" "}
+                            {method === "login" ? "Don't have an account? " : "Already have an account? "}
                             <span
                                 className="signup-button"
-                                onClick={() => navigate("/register")}
+                                onClick={() => navigate(method === "login" ? "/register" : "/login")}
                                 style={{ color: "#007bff", cursor: "pointer", textDecoration: "underline" }}
                             >
-                                Sign up
+                                {method === "login" ? "Sign up" : "Sign in"}
                             </span>
                         </p>
                     </form>

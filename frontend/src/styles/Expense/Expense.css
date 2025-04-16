@@ -126,23 +126,3 @@
   color: #c92a2a;
 }
 
-/* Responsive Layout */
-@media (max-width: 768px) {
-  .expense-layout {
-    flex-direction: column;
-  }
-  
-  .main-content {
-    padding: 15px;
-  }
-  
-  .budget-info {
-    flex-direction: column;
-    gap: 5px;
-  }
-  
-  .budget-info span {
-    text-align: center;
-  }
-}
-

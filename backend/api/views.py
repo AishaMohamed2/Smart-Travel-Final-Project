@@ -130,6 +130,46 @@ class TripUpdateView(generics.UpdateAPIView):
         """Ensure users can only update their own trips"""
         return Trip.objects.filter(user=self.request.user)
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        traveler_type = request.data.get('traveler_type', instance.traveler_type)
+        requested_budget = float(request.data.get('total_budget', instance.total_budget))
+        
+        # Get budget recommendation for validation
+        try:
+            # Calculate duration for the trip
+            start_date = request.data.get('start_date', instance.start_date)
+            end_date = request.data.get('end_date', instance.end_date)
+            duration = (end_date - start_date).days + 1
+            
+            # Get recommendation for the traveler type
+            response = requests.post(
+                "http://localhost:8000/api/budget-recommendation/",  # Adjust URL as needed
+                json={
+                    'city': request.data.get('destination', instance.destination),
+                    'traveler_type': traveler_type,
+                    'duration': duration
+                },
+                headers={'Authorization': f'Bearer {request.auth}'}
+            )
+            
+            if response.status_code == 200:
+                recommended_data = response.json()
+                max_allowed = recommended_data['total_budget'] * 1.5  # 50% above recommendation
+                min_allowed = recommended_data['total_budget'] * 0.5  # 50% below recommendation
+                
+                if not (min_allowed <= requested_budget <= max_allowed):
+                    return Response(
+                        {"error": f"Budget must be within 50% of recommended {traveler_type} budget ({recommended_data['total_budget']:.2f} {recommended_data['currency']})"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                    
+        except Exception as e:
+            logger.error(f"Budget validation error: {str(e)}")
+            # Allow update if validation fails (you might want to change this)
+        
+        return super().update(request, *args, **kwargs)
+    
 class TripDeleteView(generics.DestroyAPIView):
     """Endpoint for deleting trips"""
     serializer_class = TripSerializer

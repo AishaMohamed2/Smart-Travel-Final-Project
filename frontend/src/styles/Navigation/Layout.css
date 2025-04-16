@@ -1,47 +1,48 @@
+/* Global Styles */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-y: scroll;
+  box-sizing: border-box;
+  width: 100%;
+}
+
 /* Base Layout Styles */
 .app-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    font-family: "Inter", sans-serif;
-  }
-  
-  
-  /* Main Layout Area */
-  .main-layout {
-    display: flex;
-    flex: 1;
-  }
-  
-  /* Content Area Styles */
-  .content-area {
-    flex: 1;
-    padding: 2rem;
-    background-color: #ffffff;
-    margin-bottom: 60px; /* Space for footer */
-  }
-  
-  /* Footer Styles */
-  .app-footer {
-    background-color: #1e293b;
-    color: white;
-    padding: 1rem;
-    text-align: center;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    left: 0;
-    border-top: 1px solid #334155;
-  }
-  
-  /* Responsive Adjustments */
-  @media (max-width: 768px) {
-    .main-layout {
-      flex-direction: column;
-    }
-    
-    .content-area {
-      margin-left: 0;
-      padding: 1rem;
-    }
-  }
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: "Inter", sans-serif;
+  position: relative;
+}
+
+/* Main Layout Area */
+.main-layout {
+  display: flex;
+  flex: 1;
+  padding-bottom: 60px; /* Space for footer */
+}
+
+/* Content Area Styles */
+.content-area {
+  flex: 1;
+  padding: 2rem;
+  background-color: #ffffff;
+  overflow-y: auto;
+}
+
+/* Footer Styles */
+.app-footer {
+  background-color: #1e293b;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  left: 0;
+  border-top: 1px solid #334155;
+  z-index: 100;
+}
+

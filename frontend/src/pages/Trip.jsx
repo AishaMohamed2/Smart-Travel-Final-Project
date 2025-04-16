@@ -44,7 +44,7 @@ function Trip() {
 
     useEffect(() => {
         const duration = calculateDuration(startDate, endDate);
-        if (destination && travelerType && duration > 0) {
+        if (endDate && destination && travelerType && duration > 0) {
             fetchBudgetRecommendation(destination, travelerType, duration);
         } else {
             setRecommendedBudget(null);
@@ -123,6 +123,21 @@ function Trip() {
         setValidationError("");
     };
 
+    const resetForm = () => {
+        setTripName("");
+        setDestination("");
+        setStartDate("");
+        setEndDate("");
+        setTotalBudget(0);
+        setTravelerType("");
+        setSavings(0);
+        setRecommendedBudget(null);
+        setEditingTripId(null);
+        setValidationError("");
+        setError("");
+        setLoadingRecommendation(false);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setValidationError("");
@@ -133,13 +148,43 @@ function Trip() {
             return;
         }
 
-        const currentDate = new Date();
-        currentDate.setHours(0, 0, 0, 0);
-        const selectedEndDate = new Date(endDate);
-        
-        if (selectedEndDate < currentDate) {
-            setValidationError("You cannot add a trip that has already ended.");
-            return;
+        const duration = calculateDuration(startDate, endDate);
+
+        if (endDate && recommendedBudget) {
+            const maxAllowed = recommendedBudget.total_budget * 1.5;
+            const minAllowed = recommendedBudget.total_budget * 0.5;
+            
+            if (totalBudget < minAllowed || totalBudget > maxAllowed) {
+                setValidationError(
+                    `Budget must be between ${minAllowed.toFixed(2)} and ${maxAllowed.toFixed(2)} ${recommendedBudget.currency} for ${travelerType} travel`
+                );
+                return;
+            }
+        } else if (endDate && destination && duration > 0) {
+            try {
+                setLoadingRecommendation(true);
+                const response = await api.post('/api/budget-recommendation/', {
+                    city: destination,
+                    traveler_type: travelerType,
+                    duration: duration
+                });
+                
+                const recBudget = response.data.total_budget;
+                const maxAllowed = recBudget * 1.5;
+                const minAllowed = recBudget * 0.5;
+                
+                if (totalBudget < minAllowed || totalBudget > maxAllowed) {
+                    setValidationError(
+                        `Budget must be between ${minAllowed.toFixed(2)} and ${maxAllowed.toFixed(2)} ${response.data.currency} for ${travelerType} travel`
+                    );
+                    return;
+                }
+            } catch (error) {
+                console.error("Budget validation failed:", error);
+                setValidationError("Couldn't verify budget recommendation. Please ensure your budget is reasonable.");
+            } finally {
+                setLoadingRecommendation(false);
+            }
         }
         
         const tripData = {
@@ -153,24 +198,16 @@ function Trip() {
         };
         
         try {
+            let response;
             if (editingTripId) {
-                const response = await api.put(`/api/trips/${editingTripId}/update/`, tripData);
+                response = await api.put(`/api/trips/${editingTripId}/update/`, tripData);
                 setTrips(trips.map((trip) => (trip.id === editingTripId ? response.data : trip)));
-                setEditingTripId(null);
             } else {
-                const response = await api.post("/api/trips/", tripData);
+                response = await api.post("/api/trips/", tripData);
                 setTrips([...trips, response.data]);
             }
             
-            // Reset form
-            setTripName("");
-            setDestination("");
-            setStartDate("");
-            setEndDate("");
-            setTotalBudget(0);
-            setTravelerType("");
-            setSavings(0);
-            setRecommendedBudget(null);
+            resetForm();
         } catch (error) {
             console.error("Error details:", error.response ? error.response.data : error);
             setError("Failed to submit trip. Please try again.");

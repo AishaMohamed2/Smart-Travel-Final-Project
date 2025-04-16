@@ -20,18 +20,19 @@ const Dropdown = ({
         label: `${currency.code} - ${currency.name}`
       }));
 
-  // Find the currently selected value
-  const selectedValue = options.find(option => option.value === value);
+  // Handle null/undefined value
+  const selectedValue = value ? options.find(option => option.value === value) : null;
 
   return (
     <Select
       options={options}
       value={selectedValue}
-      onChange={(selectedOption) => onChange(selectedOption.value)}
+      onChange={(selectedOption) => onChange(selectedOption ? selectedOption.value : '')}
       placeholder={placeholder}
       isSearchable
       classNamePrefix="city-select"
       className="form-group"
+      isClearable={true}
     />
   );
 };

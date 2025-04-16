@@ -6,7 +6,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearSca
 import "../styles/Analytics.css";
 import { useCurrency } from '../utils/useCurrency';
 
-// Register ChartJS components - this sets up the chart types we'll use
+// Register ChartJS components
 ChartJS.register(
   ArcElement, Tooltip, Legend, 
   CategoryScale, LinearScale, 
@@ -14,10 +14,7 @@ ChartJS.register(
 );
 
 function Analytics() {
-  // Currency formatting utilities from custom hook
   const { formatAmount, currencySymbol } = useCurrency();
-
-  // State management for analytics data and UI
   const [analyticsData, setAnalyticsData] = useState({
     trips: [],
     totalBudget: 0,
@@ -124,6 +121,9 @@ function Analytics() {
   };
 
   const getCategoryChartData = (categories) => {
+
+    const categoryData = categories || {};
+    
     const categoryLabels = {
       food: "Food & Dining",
       transport: "Transport",
@@ -131,17 +131,12 @@ function Analytics() {
       entertainment: "Entertainment",
       other: "Other"
     };
-
-    const allCategories = Object.keys(categoryLabels);
-    const backgroundColors = [
-      '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'
-    ];
-
+  
     return {
-      labels: allCategories.map(cat => categoryLabels[cat]),
+      labels: Object.values(categoryLabels),
       datasets: [{
-        data: allCategories.map(cat => categories[cat] || 0),
-        backgroundColor: backgroundColors,
+        data: Object.keys(categoryLabels).map(cat => categoryData[cat] || 0),
+        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
         borderWidth: 1
       }]
     };
@@ -189,40 +184,24 @@ function Analytics() {
     };
   };
 
-  const getDailyAverageData = (spent, startDate, endDate) => {
-    const duration = (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24) + 1;
-    const average = spent / duration;
-    return {
-      labels: ['Daily Average Spending'],
-      datasets: [{
-        data: [average],
-        backgroundColor: ['#f59e0b'],
-        borderWidth: 1
-      }]
-    };
-  };
-
   const calculatePercentage = (value, total) => {
     return total > 0 ? Math.round((value / total) * 100) : 0;
   };
 
-
   if (!isLoading && analyticsData.trips.length === 0 && !selectedTripId) {
     return (
       <div className="analytics-page-container">
-        <div className="main-content">
-          <div className="analytics-container">
-            <div className="no-analytics-message">
-              <h2>No Analytics Available</h2>
-              <p>Analytics are only shown for trips that have ended.</p>
-              <p>Start a new trip or wait for your current trips to complete to see analytics.</p>
-              <button 
-                onClick={() => navigate("/trips")} 
-                className="create-trip-btn"
-              >
-                Create a New Trip
-              </button>
-            </div>
+        <div className="analytics-container">
+          <div className="no-analytics-message">
+            <h2>No Analytics Available</h2>
+            <p>Analytics are only shown for trips that have ended or have one day left.</p>
+            <p>Start a new trip or wait for your current trips to complete to see analytics.</p>
+            <button 
+              onClick={() => navigate("/trips")} 
+              className="create-trip-btn"
+            >
+              Create a New Trip
+            </button>
           </div>
         </div>
       </div>
@@ -231,100 +210,151 @@ function Analytics() {
 
   return (
     <div className="analytics-page-container">
-      <div className="main-content">
-        <div className="analytics-container">
-          <div className="analytics-header">
-            <h1>Financial Recap</h1>
-            <div className="trip-selector">
-              <select 
-                onChange={(e) => handleTripSelect(e.target.value)}
-                value={selectedTripId}
-                disabled={isLoading}
-              >
-                <option value="">All Trips</option>
-                {analyticsData.trips.map(trip => (
-                  <option key={trip.trip_id} value={trip.trip_id}>
-                    {trip.trip_name} ({trip.destination}, {formatDate(trip.start_date)} to {formatDate(trip.end_date)})
-                  </option>
-                ))}
-              </select>
-              {selectedTripId && (
-                <button onClick={handleViewAllTrips} className="view-all-btn">
-                  View All Trips
-                </button>
-              )}
-            </div>
+      <div className="analytics-container">
+        <div className="analytics-header">
+          <h1>Financial Recap</h1>
+          <div className="trip-selector">
+            <select 
+              onChange={(e) => handleTripSelect(e.target.value)}
+              value={selectedTripId}
+              
+            >
+              <option value="">All Trips</option>
+              {analyticsData.trips.map(trip => (
+                <option key={trip.trip_id} value={trip.trip_id}>
+                  {trip.trip_name} ({trip.destination})
+                </option>
+              ))}
+            </select>
+            {selectedTripId && (
+              <button onClick={handleViewAllTrips} className="view-all-btn">
+                View All Trips
+              </button>
+            )}
           </div>
+        </div>
 
-          {error && <div className="error-message">{error}</div>}
+        {error && <div className="error-message">{error}</div>}
 
-          {!selectedTripId ? (
-            <div className="all-trips-view">
-              <div className="summary-section">
-                <div className="summary-card">
-                  <h3>Total Spent</h3>
-                  <p className="amount">{formatAmount(analyticsData.totalSpent)}</p>
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-bar-fill" 
-                      style={{ 
-                        width: `${calculatePercentage(analyticsData.totalSpent, analyticsData.totalBudget)}%` 
-                      }}
-                    ></div>
-                  </div>
-                  <p className="summary-text">
-                    {formatAmount(analyticsData.totalBudget)} budget
-                  </p>
+        {!selectedTripId ? (
+          <div className="all-trips-view">
+            <div className="summary-section">
+              <div className="summary-card">
+                <h3>Total Spent</h3>
+                <p className="amount">{formatAmount(analyticsData.totalSpent)}</p>
+                <div className="progress-bar">
+                  <div 
+                    className="progress-bar-fill" 
+                    style={{ 
+                      width: `${calculatePercentage(analyticsData.totalSpent, analyticsData.totalBudget)}%` 
+                    }}
+                  ></div>
                 </div>
+                <p className="summary-text">
+                  {formatAmount(analyticsData.totalBudget)} budget
+                </p>
+              </div>
 
-                <div className="summary-card">
-                  <h3>Remaining Budget</h3>
-                  <p className="amount">{formatAmount(analyticsData.totalBudget - analyticsData.totalSpent)}</p>
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-bar-fill remaining" 
-                      style={{ 
-                        width: `${calculatePercentage(analyticsData.totalBudget - analyticsData.totalSpent, analyticsData.totalBudget)}%` 
-                      }}
-                    ></div>
-                  </div>
-                  <p className="summary-text">
-                    {calculatePercentage(analyticsData.totalBudget - analyticsData.totalSpent, analyticsData.totalBudget)}% remaining
-                  </p>
+              <div className="summary-card">
+                <h3>Remaining Budget</h3>
+                <p className="amount">{formatAmount(analyticsData.totalBudget - analyticsData.totalSpent)}</p>
+                <div className="progress-bar">
+                  <div 
+                    className="progress-bar-fill remaining" 
+                    style={{ 
+                      width: `${calculatePercentage(analyticsData.totalBudget - analyticsData.totalSpent, analyticsData.totalBudget)}%` 
+                    }}
+                  ></div>
+                </div>
+                <p className="summary-text">
+                  {calculatePercentage(analyticsData.totalBudget - analyticsData.totalSpent, analyticsData.totalBudget)}% remaining
+                </p>
+              </div>
+            </div>
+
+            <div className="visualizations-section">
+              <div className="chart-card">
+                <h3>Spending by Trip</h3>
+                <div className="chart-container">
+                  <Bar 
+                    data={{
+                      labels: analyticsData.trips.map(trip => trip.trip_name),
+                      datasets: [{
+                        label: 'Spent',
+                        data: analyticsData.trips.map(trip => trip.total_spent),
+                        backgroundColor: '#3b82f6'
+                      }, {
+                        label: 'Budget',
+                        data: analyticsData.trips.map(trip => trip.total_budget),
+                        backgroundColor: '#e2e8f0'
+                      }]
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                          callbacks: {
+                            label: (context) => `${context.dataset.label}: ${formatAmount(context.raw)}`
+                          }
+                        }
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          title: {
+                            display: true,
+                            text: `Amount (${currencySymbol})`
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="dual-chart-section">
+              <div className="chart-card">
+                <h3>Spending by Category</h3>
+                <div className="chart-container">
+                  <Pie 
+                    data={getCategoryChartData(analyticsData.categories)}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                          callbacks: {
+                            label: (context) => {
+                              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                              const percentage = Math.round((context.raw / total) * 100);
+                              return `${context.label}: ${formatAmount(context.raw)} (${percentage}%)`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
                 </div>
               </div>
 
-              <div className="visualizations-section">
-                <div className="chart-card">
-                  <div className="chart-header">
-                    <h3>Spending by Trip</h3>
-                  </div>
-                  <div className="chart-container">
-                    <Bar 
-                      data={{
-                        labels: analyticsData.trips.map(trip => trip.trip_name),
-                        datasets: [{
-                          label: 'Spent',
-                          data: analyticsData.trips.map(trip => trip.total_spent),
-                          backgroundColor: '#3b82f6'
-                        }, {
-                          label: 'Budget',
-                          data: analyticsData.trips.map(trip => trip.total_budget),
-                          backgroundColor: '#e2e8f0'
-                        }]
-                      }}
+              <div className="chart-card">
+                <h3>Daily Spending</h3>
+                <div className="chart-container">
+                  {Object.keys(analyticsData.dailySpending).length > 0 ? (
+                    <Line 
+                      data={getDailySpendingData(analyticsData.dailySpending)}
                       options={{
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                          legend: {
-                            position: 'top',
-                          },
+                          legend: { position: 'top' },
                           tooltip: {
                             callbacks: {
-                              label: function(context) {
-                                return `${context.dataset.label}: ${formatAmount(context.raw)}`;
-                              }
+                              label: (context) => `${context.dataset.label}: ${formatAmount(context.raw)}`
                             }
                           }
                         },
@@ -335,232 +365,168 @@ function Analytics() {
                               display: true,
                               text: `Amount (${currencySymbol})`
                             }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="dual-chart-section">
-                <div className="chart-card">
-                  <div className="chart-header">
-                    <h3>Spending by Category</h3>
-                  </div>
-                  <div className="chart-container">
-                    <Pie 
-                      data={getCategoryChartData(analyticsData.categories)}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            position: 'top',
                           },
-                          tooltip: {
-                            callbacks: {
-                              label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((value / total) * 100);
-                                return `${label}: ${formatAmount(value)} (${percentage}%)`;
-                              }
+                          x: {
+                            title: {
+                              display: true,
+                              text: 'Date'
                             }
                           }
                         }
                       }}
                     />
+                  ) : (
+                    <div className="no-data-message">
+                      No daily spending data available
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="trip-details-view">
+            {tripDetails ? (
+              <>
+                <div className="trip-header">
+                  <h2>{tripDetails.trip_name} Analytics</h2>
+                  <p>{formatDate(tripDetails.start_date)} to {formatDate(tripDetails.end_date)}</p>
+                </div>
+
+                <div className="summary-section">
+                  <div className="summary-card">
+                    <h3>Total Budget</h3>
+                    <p className="amount">{formatAmount(tripDetails.total_budget)}</p>
+                  </div>
+                  
+                  <div className="summary-card">
+                    <h3>Total Spent</h3>
+                    <p className="amount">{formatAmount(tripDetails.total_spent)}</p>
+                  </div>
+                  
+                  <div className="summary-card">
+                    <h3>Remaining</h3>
+                    <p className="amount">{formatAmount(tripDetails.total_budget - tripDetails.total_spent)}</p>
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-bar-fill remaining" 
+                        style={{ 
+                          width: `${calculatePercentage(
+                            tripDetails.total_budget - tripDetails.total_spent, 
+                            tripDetails.total_budget
+                          )}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <p className="summary-text">
+                      {calculatePercentage(
+                        tripDetails.total_budget - tripDetails.total_spent, 
+                        tripDetails.total_budget
+                      )}% remaining
+                    </p>
+                  </div>
+                  
+                  <div className="summary-card">
+                    <h3>Daily Average</h3>
+                    <p className="amount">{formatAmount(
+                      tripDetails.total_spent / 
+                      ((new Date(tripDetails.end_date) - new Date(tripDetails.start_date)) / 
+                      (1000 * 60 * 60 * 24) + 1)
+                    )}</p>
                   </div>
                 </div>
 
-                <div className="chart-card">
-                  <div className="chart-header">
-                    <h3>Daily Spending</h3>
-                  </div>
-                  <div className="chart-container">
-                    {Object.keys(analyticsData.dailySpending).length > 0 ? (
-                      <Line 
-                        data={getDailySpendingData(analyticsData.dailySpending)}
+                <div className="dual-chart-section">
+                  <div className="chart-card">
+                    <h3>Budget vs Spent</h3>
+                    <div className="chart-container">
+                      <Doughnut 
+                        data={getBudgetComparisonData(tripDetails.total_budget, tripDetails.total_spent)}
                         options={{
                           responsive: true,
                           maintainAspectRatio: false,
                           plugins: {
-                            legend: {
-                              position: 'top',
-                            },
+                            legend: { position: 'bottom' },
                             tooltip: {
                               callbacks: {
-                                label: function(context) {
-                                  return `${context.dataset.label}: ${formatAmount(context.raw)}`;
-                                }
-                              }
-                            }
-                          },
-                          scales: {
-                            y: {
-                              beginAtZero: true,
-                              title: {
-                                display: true,
-                                text: `Amount (${currencySymbol})`
-                              }
-                            },
-                            x: {
-                              title: {
-                                display: true,
-                                text: 'Date'
+                                label: (context) => `${context.label}: ${formatAmount(context.raw)}`
                               }
                             }
                           }
                         }}
                       />
-                    ) : (
-                      <div className="no-data-message">
-                        No daily spending data available
-                      </div>
-                    )}
+                    </div>
+                  </div>
+
+                  <div className="chart-card">
+                    <h3>Spending by Category</h3>
+                    <div className="chart-container">
+                      <Pie 
+                        data={getCategoryChartData(tripDetails.category_spending)}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                              callbacks: {
+                                label: (context) => {
+                                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                  const percentage = Math.round((context.raw / total) * 100);
+                                  return `${context.label}: ${formatAmount(context.raw)} (${percentage}%)`;
+                                }
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
+
+                <div className="visualizations-section">
+                  <div className="chart-card full-width">
+                    <h3>Daily Spending</h3>
+                    <div className="chart-container">
+                      {Object.keys(tripDetails.daily_spending).length > 0 ? (
+                        <Line 
+                          data={getDailySpendingData(tripDetails.daily_spending)}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: { position: 'top' },
+                              tooltip: {
+                                callbacks: {
+                                  label: (context) => `${context.dataset.label}: ${formatAmount(context.raw)}`
+                                }
+                              }
+                            },
+                            scales: {
+                              y: { 
+                                beginAtZero: true,
+                                title: { display: true, text: `Amount (${currencySymbol})` }
+                              },
+                              x: { 
+                                title: { display: true, text: 'Date' } 
+                              }
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="no-data-message">No daily spending data available</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="error-message">
+                {error || "No trip details available"}
               </div>
-            </div>
-          ) : (
-            <div className="trip-details-view">
-              {tripDetails ? (
-                <>
-                  <div className="trip-header">
-                    <h2>{tripDetails.trip_name} Analytics</h2>
-                    <p className="trip-dates">{formatDate(tripDetails.start_date)} to {formatDate(tripDetails.end_date)}</p>
-                  </div>
-
-                  <div className="trip-summary-cards">
-                    <div className="trip-summary-card">
-                      <h3>Total Budget</h3>
-                      <p className="amount">{formatAmount(tripDetails.total_budget)}</p>
-                    </div>
-                    <div className="trip-summary-card">
-                      <h3>Total Spent</h3>
-                      <p className="amount">{formatAmount(tripDetails.total_spent)}</p>
-                    </div>
-                    <div className="trip-summary-card">
-                      <h3>Remaining</h3>
-                      <p className="amount">{formatAmount(tripDetails.total_budget - tripDetails.total_spent)}</p>
-                    </div>
-                    <div className="trip-summary-card">
-                      <h3>Daily Average</h3>
-                      <p className="amount">{formatAmount(
-                        tripDetails.total_spent / 
-                        ((new Date(tripDetails.end_date) - new Date(tripDetails.start_date)) / (1000 * 60 * 60 * 24) + 1)
-                      )}</p>
-                    </div>
-                  </div>
-
-                  <div className="trip-charts-grid">
-                    <div className="chart-card">
-                      <h3>Budget vs Spent</h3>
-                      <div className="chart-container">
-                        <Doughnut 
-                          data={getBudgetComparisonData(tripDetails.total_budget, tripDetails.total_spent)}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                              legend: {
-                                position: 'bottom',
-                              },
-                              tooltip: {
-                                callbacks: {
-                                  label: function(context) {
-                                    return `${context.label}: ${formatAmount(context.raw)}`;
-                                  }
-                                }
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="chart-card">
-                      <h3>Spending by Category</h3>
-                      <div className="chart-container">
-                        <Pie 
-                          data={getCategoryChartData(tripDetails.category_spending)}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                              legend: {
-                                position: 'bottom',
-                              },
-                              tooltip: {
-                                callbacks: {
-                                  label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${formatAmount(value)} (${percentage}%)`;
-                                  }
-                                }
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {tripDetails.daily_spending && Object.keys(tripDetails.daily_spending).length > 0 && (
-                      <div className="chart-card full-width">
-                        <h3>Daily Spending</h3>
-                        <div className="chart-container">
-                          <Line 
-                            data={getDailySpendingData(tripDetails.daily_spending)}
-                            options={{
-                              responsive: true,
-                              maintainAspectRatio: false,
-                              plugins: {
-                                legend: {
-                                  position: 'top',
-                                },
-                                tooltip: {
-                                  callbacks: {
-                                    label: function(context) {
-                                      return `${context.dataset.label}: ${formatAmount(context.raw)}`;
-                                    }
-                                  }
-                                }
-                              },
-                              scales: {
-                                y: {
-                                  beginAtZero: true,
-                                  title: {
-                                    display: true,
-                                    text: `Amount (${currencySymbol})`
-                                  }
-                                },
-                                x: {
-                                  title: {
-                                    display: true,
-                                    text: 'Date'
-                                  }
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="error-message">
-                  {error || "No trip details available"}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

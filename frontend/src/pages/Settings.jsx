@@ -1,9 +1,11 @@
+// src/components/Settings.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import api from '../api';
 import '../styles/Settings.css';
 import currencies from '../data/currencies';
+import { validatePassword, getPasswordStrength } from '../utils/passwordUtils';
 
 function Settings() {
   const [formData, setFormData] = useState({
@@ -19,13 +21,11 @@ function Settings() {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
-  
   const currencyOptions = currencies.map(currency => ({
     value: currency.code,
     label: `${currency.code} - ${currency.name}`,
     ...currency
   }));
-
 
   const selectedCurrency = currencyOptions.find(
     option => option.value === formData.currency
@@ -76,10 +76,19 @@ function Settings() {
     setSuccess('');
     setLoading(true);
 
-    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
+    if (formData.newPassword) {
+      if (formData.newPassword !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        setLoading(false);
+        return;
+      }
+      
+      const passwordValidation = validatePassword(formData.newPassword);
+      if (!passwordValidation.isValid) {
+        setError(passwordValidation.errors.join(" "));
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -123,16 +132,6 @@ function Settings() {
       }
     }
   };
-
-  if (loading) {
-    return (
-      <div className="settings-page-container">
-        <div className="main-content">
-          <div className="loading-spinner"></div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="settings-page-container">
@@ -186,6 +185,19 @@ function Settings() {
                   value={formData.newPassword}
                   onChange={handleChange}
                 />
+                {formData.newPassword && (
+                  <>
+                    <div className="password-strength-meter">
+                      <div 
+                        className={`strength-bar ${getPasswordStrength(formData.newPassword) > 0 ? "active" : ""}`}
+                        style={{width: `${getPasswordStrength(formData.newPassword) * 20}%`}}
+                      ></div>
+                    </div>
+                    <div className="password-hint">
+                      Password must contain: 8+ characters, uppercase, lowercase, number, and special character.
+                    </div>
+                  </>
+                )}
               </div>
               {formData.newPassword && (
                 <div className="form-group">

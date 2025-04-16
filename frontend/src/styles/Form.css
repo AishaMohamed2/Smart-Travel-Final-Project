@@ -5,6 +5,7 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden; 
+  font-family: "Inter", sans-serif;
 }
 
 /* Logo styling */
@@ -136,4 +137,30 @@ html, body {
 /* Input Group */
 .input-group {
   margin-bottom: 15px;
+}
+
+/* Password strength meter */
+.password-strength-meter {
+  height: 5px;
+  background-color: #e2e8f0;
+  border-radius: 3px;
+  margin-top: 5px;
+  overflow: hidden;
+}
+
+.strength-bar {
+  height: 100%;
+  background-color: #ef4444;
+  transition: width 0.3s, background-color 0.3s;
+}
+
+.strength-bar.active {
+  background-color: #10b981;
+}
+
+.password-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 5px;
+  text-align: left;
 }

@@ -6,26 +6,6 @@
   background-color: #ffffff;
 }
 
-
-
-/* Logout Button */
-.logout-btn {
-  margin-top: auto; /* Pushes button to the bottom */
-  width: 100%;
-  padding: 12px 0;
-  background-color: #1e293b; 
-  color: white;
-  text-align: center;
-  font-weight: bold;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.logout-btn:hover {
-  background-color: #475569; 
-}
-
 /* Main Content */
 .main-content {
   flex-grow: 1;

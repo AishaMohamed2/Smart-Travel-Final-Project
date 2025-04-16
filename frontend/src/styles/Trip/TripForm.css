@@ -1,11 +1,11 @@
 .trip-form {
-    width: 100%;
-    max-width: 500px;
+    width: 50%;
+    max-width: 400px; /* Prevents the form from being too wide */
     background-color: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    margin: 30px auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: auto; /* Centers the form */
 }
 
 .trip-form h2 {
@@ -131,6 +131,7 @@
     cursor: pointer;
 }
 
+
 /* Submit Button */
 .submit-btn {
     width: 100%;
@@ -160,17 +161,35 @@
     border: 1px solid #fca5a5;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .trip-form {
-        padding: 20px;
-    }
-    
-    .trip-form h2 {
-        font-size: 1.5rem;
-    }
-    
-    .budget-recommendation {
-        padding: 15px;
-    }
-}
+
+.invalid-budget {
+    border-color: #ff9800;
+    background-color: #fff8e1;
+  }
+  
+  .validation-warning {
+    color: #f81616;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+  }
+  
+  .submit-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  .budget-range-indicator {
+    margin: 1rem 0;
+    padding: 0.8rem;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .budget-range-indicator p {
+    margin: 0.3rem 0;
+  }
+  
+  .budget-range-indicator p:first-child {
+    font-weight: bold;
+  }
