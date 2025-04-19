@@ -39,14 +39,12 @@ class CustomUser(AbstractBaseUser):
 
 # TRIP MODEL 
 class Trip(models.Model):
-    # Trip type options
     TRAVELER_TYPES = [
         ("luxury", "Luxury"),
         ("medium", "Medium"),
         ("budget", "Budget"),
     ]
 
-    # Trip details
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="trips")
     trip_name = models.CharField(max_length=255)
     destination = models.CharField(max_length=255)
@@ -55,11 +53,16 @@ class Trip(models.Model):
     total_budget = models.DecimalField(max_digits=10, decimal_places=2)
     traveler_type = models.CharField(max_length=10, choices=TRAVELER_TYPES, default="medium")
     savings = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    collaborators = models.ManyToManyField(CustomUser, related_name="collaborated_trips", blank=True)
+    currency = models.CharField(max_length=3, default='GBP')
 
-    # How trips are displayed
     def __str__(self):
         return f"{self.trip_name} ({self.destination})"
 
+    def is_user_allowed(self, user):
+        """Check if user is owner or collaborator"""
+        return self.user == user or user in self.collaborators.all()
+    
 # EXPENSE MODEL 
 class Expense(models.Model):
     # Spending categories
@@ -77,6 +80,7 @@ class Expense(models.Model):
     date = models.DateField()
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     description = models.TextField(blank=True, null=True)
+    original_currency = models.CharField(max_length=3, default='GBP')  # Currency of the user who added the expense
 
     # How expenses are displayed
     def __str__(self):

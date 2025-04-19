@@ -22,6 +22,12 @@
   background-color: #ffffff;
 }
 
+.expense-container h1 {
+  text-align: center;
+  font-size: 2rem;
+  color: #0f172a;
+}
+
 .expense-container h2 {
   text-align: center;
   font-size: 2rem;
@@ -38,34 +44,6 @@
   color: #dc3545;
   text-align: center;
   margin-top: 15px;
-  font-weight: 500;
-}
-
-
-
-/* Error State */
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-}
-
-.retry-button {
-  background-color: #06d6a0;
-  color: white;
-  border: none;
-  padding: 0.5rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 1rem;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.retry-button:hover {
-  background-color: #05b38a;
 }
 
 /* Budget Bar Styles */

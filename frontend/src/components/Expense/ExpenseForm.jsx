@@ -21,6 +21,12 @@ function ExpenseForm({
   // Get the selected trip details
   const selectedTripDetails = trips.find(trip => trip.id === Number(selectedTrip));
 
+  // Calculate maximum allowed date (trip end date or today, whichever is earlier)
+  const today = new Date().toISOString().split('T')[0];
+  const maxDate = selectedTripDetails 
+    ? (selectedTripDetails.end_date > today ? today : selectedTripDetails.end_date)
+    : today;
+
   // State to manage loading status
   const [loading, setLoading] = useState(false);
 
@@ -69,8 +75,8 @@ function ExpenseForm({
             onChange={(e) => setDate(e.target.value)}
             required 
             min={selectedTripDetails?.start_date || ""}
-            max={selectedTripDetails?.end_date || ""}
-            disabled={!selectedTrip} // Disable if no trip is selected
+            max={maxDate}
+            disabled={!selectedTrip}
           />
         </div>
 

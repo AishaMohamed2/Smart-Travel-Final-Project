@@ -20,6 +20,8 @@ function Expense() {
   const [currentTrip, setCurrentTrip] = useState(null);
   const [totalSpent, setTotalSpent] = useState(0);
   const { formatAmount } = useCurrency();
+  const [showSplitForm, setShowSplitForm] = useState(false);
+  const [expenseToSplit, setExpenseToSplit] = useState(null);
 
   // Fetching trips and expenses data from API 
   useEffect(() => {
@@ -67,6 +69,17 @@ function Expense() {
 
   // Calculate remaining budget for the selected trip
   const remainingBudget = currentTrip ? parseFloat(currentTrip.total_budget || 0) - totalSpent : 0;
+
+  const handleSplitClick = (expense) => {
+    setExpenseToSplit(expense);
+    setShowSplitForm(true);
+  };
+  
+  const handleSplitComplete = () => {
+    setShowSplitForm(false);
+    // Refresh expenses
+    fetchExpenses();
+  };
 
   // Handle form submission to add or update an expense
   const handleSubmit = async (e) => {
@@ -195,6 +208,7 @@ function Expense() {
                 </div>
               )}
             </div>
+            
           )}
 
           <div className="expense-layout">

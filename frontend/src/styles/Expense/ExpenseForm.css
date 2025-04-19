@@ -1,17 +1,19 @@
 .expense-form {
   width: 50%;
-  max-width: 400px; /* Prevents the form from being too wide */
+  max-width: 400px; 
   background-color: #ffffff;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin: auto; /* Centers the form */
+  margin: auto; 
 }
 
 .expense-form h2 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   color: #1e293b;
+  font-size: 2rem;
+  font-weight: 600;
 }
 
 .form-group {
@@ -29,26 +31,30 @@
 .form-group input,
 .form-group select,
 .form-group textarea {
-  width: calc(100% - 20px); /* Prevents overflow */
-  max-width: 100%; /* Ensures responsiveness */
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 1rem;
   background-color: #ffffff;
-  box-sizing: border-box; /* Ensures padding doesn’t affect width */
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  color: #0f172a;
+  font-family: inherit;
+  min-height: 48px;
 }
 
 .expense-form button {
   width: 100%;
-  padding: 12px;
+  padding: 16px;
   background-color: #0f172a;
   color: white;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  border-radius: 8px;
   font-size: 1.1rem;
-  transition: background-color 0.3s;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background 0.2s;
 }
 
 .expense-form button:hover {

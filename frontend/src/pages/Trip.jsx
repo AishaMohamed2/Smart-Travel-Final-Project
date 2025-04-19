@@ -13,13 +13,15 @@ function Trip() {
     const [endDate, setEndDate] = useState("");
     const [totalBudget, setTotalBudget] = useState(0);
     const [travelerType, setTravelerType] = useState("");
-    const [savings, setSavings] = useState(0);
     const [error, setError] = useState("");
     const [trips, setTrips] = useState([]);
     const [editingTripId, setEditingTripId] = useState(null);
     const [validationError, setValidationError] = useState("");
     const [recommendedBudget, setRecommendedBudget] = useState(null);
     const [loadingRecommendation, setLoadingRecommendation] = useState(false);
+    const [collaborators, setCollaborators] = useState([]);
+    const [initialCollaboratorsLoaded, setInitialCollaboratorsLoaded] = useState(false);
+    const [loadingCollaborators, setLoadingCollaborators] = useState(false);
     const navigate = useNavigate();
     const { formatAmount } = useCurrency();
 
@@ -39,8 +41,34 @@ function Trip() {
         if (!start || !end) return 0;
         const startDate = new Date(start);
         const endDate = new Date(end);
-        return Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        return Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
     };
+
+    useEffect(() => {
+        const controller = new AbortController();
+        
+        const fetchCollaborators = async () => {
+            if (editingTripId && !initialCollaboratorsLoaded) {
+                setLoadingCollaborators(true);
+                try {
+                    const response = await api.get(`/api/trips/${editingTripId}/collaborators/`, {
+                        signal: controller.signal
+                    });
+                    setCollaborators(response.data.data?.collaborators || []);
+                    setInitialCollaboratorsLoaded(true);
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        console.error("Failed to load collaborators:", error);
+                    }
+                } finally {
+                    setLoadingCollaborators(false);
+                }
+            }
+        };
+
+        fetchCollaborators();
+        return () => controller.abort();
+    }, [editingTripId, initialCollaboratorsLoaded]);
 
     useEffect(() => {
         const duration = calculateDuration(startDate, endDate);
@@ -78,10 +106,18 @@ function Trip() {
 
     const handleEndDateChange = (e) => {
         const newEndDate = e.target.value;
+        const today = new Date().toISOString().split('T')[0];
+        
         if (new Date(newEndDate) < new Date(startDate)) {
             setValidationError("End date cannot be before start date.");
             return;
         }
+        
+        if (new Date(newEndDate) < new Date(today)) {
+            setValidationError("End date cannot be in the past.");
+            return;
+        }
+
         setValidationError("");
         setEndDate(newEndDate);
     };
@@ -99,15 +135,16 @@ function Trip() {
     };
 
     const handleDeleteTrip = async (tripId) => {
-        const confirmDelete = window.confirm("Are you sure you want to delete this trip?");
-        if (!confirmDelete) return;
-
         try {
             await api.delete(`/api/trips/${tripId}/`);
             setTrips(trips.filter((trip) => trip.id !== tripId));
         } catch (error) {
-            console.error("Error deleting trip:", error);
-            setError("Failed to delete trip. Please try again.");
+            if (error.response && error.response.status === 403) {
+                setError("Only the trip owner can delete this trip");
+            } else {
+                console.error("Error deleting trip:", error);
+                setError("Failed to delete trip. Please try again.");
+            }
         }
     };
 
@@ -119,8 +156,9 @@ function Trip() {
         setEndDate(trip.end_date);
         setTotalBudget(trip.total_budget);
         setTravelerType(trip.traveler_type || "");
-        setSavings(trip.savings);
         setValidationError("");
+        setCollaborators([]);
+        setInitialCollaboratorsLoaded(false);
     };
 
     const resetForm = () => {
@@ -130,21 +168,30 @@ function Trip() {
         setEndDate("");
         setTotalBudget(0);
         setTravelerType("");
-        setSavings(0);
         setRecommendedBudget(null);
         setEditingTripId(null);
         setValidationError("");
         setError("");
         setLoadingRecommendation(false);
+        setCollaborators([]);
+        setInitialCollaboratorsLoaded(false);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e, collaborators = []) => {
         e.preventDefault();
         setValidationError("");
         setError("");
         
         if (!travelerType) {
             setValidationError("Please select a traveller type.");
+            return;
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (new Date(endDate) < today) {
+            setValidationError("You cannot add a trip that has already ended.");
             return;
         }
 
@@ -194,26 +241,69 @@ function Trip() {
             end_date: endDate,
             total_budget: totalBudget,
             traveler_type: travelerType,
-            savings: savings || 0,
         };
-        
+          
         try {
             let response;
             if (editingTripId) {
-                response = await api.put(`/api/trips/${editingTripId}/update/`, tripData);
-                setTrips(trips.map((trip) => (trip.id === editingTripId ? response.data : trip)));
+                try {
+                    response = await api.put(`/api/trips/${editingTripId}/update/`, tripData);
+                    await updateCollaborators(editingTripId, collaborators);
+                    setTrips(trips.map((trip) => (trip.id === editingTripId ? response.data : trip)));
+                    resetForm();
+                } catch (error) {
+                    if (error.response && error.response.status === 403) {
+                        setError("Only the trip owner can update this trip");
+                    } else {
+                        console.error("Error:", error);
+                        setError("Only the trip owner can update this trip");
+                    }
+                    return;
+                }
             } else {
                 response = await api.post("/api/trips/", tripData);
+                await updateCollaborators(response.data.id, collaborators);
                 setTrips([...trips, response.data]);
+                resetForm();
             }
-            
-            resetForm();
         } catch (error) {
-            console.error("Error details:", error.response ? error.response.data : error);
+            console.error("Error:", error);
             setError("Failed to submit trip. Please try again.");
         }
     };
-
+      
+    const updateCollaborators = async (tripId, newCollaborators) => {
+        try {
+            const currentResponse = await api.get(`/api/trips/${tripId}/collaborators/`);
+            const currentCollaborators = currentResponse.data.data?.collaborators || [];
+            
+            const currentEmails = currentCollaborators.map(c => c.email);
+            const newEmails = newCollaborators.map(c => c.email);
+            
+            for (const email of currentEmails) {
+                if (!newEmails.includes(email)) {
+                    await api.delete(`/api/trips/${tripId}/collaborators/`, {
+                        data: { email }
+                    });
+                }
+            }
+            
+            for (const collaborator of newCollaborators) {
+                if (!currentEmails.includes(collaborator.email)) {
+                    try {
+                        await api.post(`/api/trips/${tripId}/collaborators/`, {
+                            email: collaborator.email
+                        });
+                    } catch (err) {
+                        console.error("Failed to add collaborator:", err);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error updating collaborators:", err);
+        }
+    };
+          
     return (
         <div className="trip-page-container">
             <div className="main-content">
@@ -226,7 +316,6 @@ function Trip() {
                             travelerType={travelerType}
                             startDate={startDate}
                             endDate={endDate}
-                            savings={savings}
                             totalBudget={totalBudget}
                             handleSubmit={handleSubmit}
                             handleStartDateChange={handleStartDateChange}
@@ -235,11 +324,13 @@ function Trip() {
                             setTripName={setTripName}
                             setDestination={setDestination}
                             setTravelerType={setTravelerType}
-                            setSavings={setSavings}
                             validationError={validationError}
                             recommendedBudget={recommendedBudget}
                             loadingRecommendation={loadingRecommendation}
                             applyRecommendedBudget={applyRecommendedBudget}
+                            collaborators={collaborators}
+                            loadingCollaborators={loadingCollaborators}
+                            setCollaborators={setCollaborators}
                         />
                         <TripList
                             trips={trips}
@@ -248,7 +339,17 @@ function Trip() {
                             formatAmount={formatAmount}
                         />
                     </div>
-                    {error && <p className="error-message">{error}</p>}
+                    {error && (
+                        <div className="error-message">
+                            {error}
+                            <button 
+                                onClick={() => setError("")} 
+                                className="close-error-btn"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

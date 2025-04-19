@@ -10,12 +10,36 @@ function Home() {
     const [recentExpenses, setRecentExpenses] = useState([]);
     const [totalBudget, setTotalBudget] = useState(0);
     const [totalSpent, setTotalSpent] = useState(0);
+    const [userData, setUserData] = useState(null);
     const navigate = useNavigate();
-    const { formatAmount, currencySymbol } = useCurrency();
+    const { formatAmount } = useCurrency();
+
+    // Function to assign pastel colors to categories
+    const getCategoryColor = (category) => {
+        const colors = {
+            'food': '#FFD1DC', 
+            'transport': '#B5EAD7', 
+            'accommodation': '#C7CEEA', 
+            'entertainment': '#E2F0CB', 
+            'other': '#FFDAC1', 
+        };
+        return colors[category] || '#E5E7EB'; // Default gray
+    };
+
+    // Function to determine progress bar color
+    const getProgressBarColor = (percentage) => {
+        if (percentage >= 100) return '#EF4444'; // Red when over budget
+        if (percentage >= 80) return '#F59E0B'; // Amber at 80%
+        return '#10B981'; // Green otherwise
+    };
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Fetch user data first
+                const userResponse = await api.get("/api/user/");
+                setUserData(userResponse.data);
+                
                 // Fetch trips
                 const tripsResponse = await api.get("/api/trips/");
                 const today = new Date();
@@ -69,7 +93,12 @@ function Home() {
             {/* Main Content */}
             <div className="main-content">
                 <div className="dashboard-header">
-                    <h2>Dashboard</h2>
+                    <div>
+                        <h2>Dashboard</h2>
+                        {userData && (
+                            <p className="welcome-message">Welcome to Smart Travel, {userData.first_name}!</p>
+                        )}
+                    </div>
                     <button className="settings-circle-btn" onClick={() => navigate("/settings")}>
                         <IoPersonOutline />
                     </button>
@@ -83,7 +112,10 @@ function Home() {
                         <div className="progress-bar">
                             <div 
                                 className="progress-bar-fill" 
-                                style={{ width: `${calculatePercentage(totalSpent, totalBudget)}%` }}
+                                style={{ 
+                                    width: `${calculatePercentage(totalSpent, totalBudget)}%`,
+                                    backgroundColor: getProgressBarColor(calculatePercentage(totalSpent, totalBudget))
+                                }}
                             ></div>
                         </div>
                         <p className="budget-text">
@@ -119,7 +151,14 @@ function Home() {
                             {recentExpenses.map((expense) => (
                                 <tr key={expense.id}>
                                     <td>{expense.date}</td>
-                                    <td><span className="category-badge">{expense.category}</span></td>
+                                    <td>
+                                        <span 
+                                            className="category-badge" 
+                                            style={{ backgroundColor: getCategoryColor(expense.category) }}
+                                        >
+                                            {expense.category}
+                                        </span>
+                                    </td>
                                     <td>{expense.description}</td>
                                     <td>{formatAmount(expense.amount)}</td>
                                 </tr>

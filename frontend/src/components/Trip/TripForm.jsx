@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Dropdown from './Dropdown';
 import '../../styles/Trip/TripForm.css';
 import LoadingIndicator from '../LoadingIndicator';
+import CollaboratorManager from '../CollaboratorManager';
+import Modal from '../Modal';
+import api from '../../api';
 
 function TripForm({
   editingTripId,
@@ -10,7 +13,6 @@ function TripForm({
   travelerType,
   startDate,
   endDate,
-  savings,
   totalBudget,
   handleSubmit,
   handleStartDateChange,
@@ -19,15 +21,38 @@ function TripForm({
   setTripName,
   setDestination,
   setTravelerType,
-  setSavings,
   validationError,
   recommendedBudget,
-  applyRecommendedBudget
+  applyRecommendedBudget,
 }) {
   const [duration, setDuration] = useState(0);
   const [isBudgetValid, setIsBudgetValid] = useState(true);
   const [showBudgetSection, setShowBudgetSection] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
+  const [collaborators, setCollaborators] = useState([]);
+  const [initialCollaboratorsLoaded, setInitialCollaboratorsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (editingTripId) {
+      const fetchCollaborators = async () => {
+        try {
+          const response = await api.get(`/api/trips/${editingTripId}/collaborators/`);
+          setCollaborators(response.data.data?.collaborators || []);
+          setInitialCollaboratorsLoaded(true);
+        } catch (error) {
+          console.error("Failed to load collaborators:", error);
+        }
+      };
+
+      if (!initialCollaboratorsLoaded) {
+        fetchCollaborators();
+      }
+    } else {
+      setCollaborators([]);
+      setInitialCollaboratorsLoaded(false);
+    }
+  }, [editingTripId]);
 
   useEffect(() => {
     if (endDate) {
@@ -56,16 +81,36 @@ function TripForm({
     }
   }, [totalBudget, recommendedBudget]);
 
-
   const handleFormSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
-    await handleSubmit(e);
-    setLoading(false);
+    try {
+      await handleSubmit(e, collaborators);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddCollaboratorClick = () => {
+    setShowCollaboratorModal(true);
+  };
+
+  const handleSaveCollaborators = (newCollaborators) => {
+    setCollaborators(newCollaborators);
+    setShowCollaboratorModal(false);
+  };
+
+  const handleCollaboratorRemove = (userId) => {
+    setCollaborators(collaborators.filter(c => c.id !== userId));
   };
 
   return (
     <div className="trip-form">
       <h2>{editingTripId ? "Edit Your Trip" : "Add Trip"}</h2>
+      {validationError && <div className="form-error">{validationError}</div>}
+
       <form onSubmit={handleFormSubmit}>
         <div className="form-group">
           <label>Trip Name</label>
@@ -74,6 +119,7 @@ function TripForm({
             value={tripName}
             onChange={(e) => setTripName(e.target.value)}
             required
+            maxLength={255}
           />
         </div>
 
@@ -82,10 +128,9 @@ function TripForm({
           <Dropdown
             type="city"
             value={destination}
-            onChange={(value) => {
-              setDestination(value);
-            }}
+            onChange={(value) => setDestination(value)}
             placeholder="Select a city"
+            required
           />
         </div>
 
@@ -120,25 +165,14 @@ function TripForm({
             value={endDate}
             onChange={handleEndDateChange}
             required
-            min={startDate}
+            min={startDate || new Date().toISOString().split('T')[0]}
           />
         </div>
 
         {showBudgetSection && (
           <>
             <div className="form-group">
-              <label>Savings</label>
-              <input
-                type="number"
-                value={savings}
-                onChange={(e) => setSavings(e.target.value)}
-                min="0"
-                step="0.01"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Total Budget</label>
+              <label>Total Budget ({recommendedBudget?.currency || 'GBP'})</label>
               <input
                 type="number"
                 value={totalBudget}
@@ -150,7 +184,10 @@ function TripForm({
               />
               {recommendedBudget && !isBudgetValid && (
                 <p className="validation-warning">
-                  Budget must be between {(recommendedBudget.total_budget * 0.5).toFixed(2)} and {(recommendedBudget.total_budget * 1.5).toFixed(2)} {recommendedBudget.currency}
+                  Budget for this traveler type must be between
+                  {(recommendedBudget.total_budget * 0.5).toFixed(2)} and
+                  {(recommendedBudget.total_budget * 1.5).toFixed(2)}
+                  {recommendedBudget.currency}
                 </p>
               )}
             </div>
@@ -159,29 +196,32 @@ function TripForm({
               <div className="budget-recommendation">
                 <h4>Budget Recommendation</h4>
                 {loading ? (
-                  <LoadingIndicator /> 
+                  <LoadingIndicator />
                 ) : recommendedBudget ? (
                   <>
                     <p>Based on {travelerType} travel in {destination}:</p>
                     <ul>
                       {Object.entries(recommendedBudget.daily_breakdown).map(([category, amount]) => (
                         <li key={category}>
-                          {category}: {amount.toFixed(2)} {recommendedBudget.currency}/day
+                          {category.charAt(0).toUpperCase() + category.slice(1)}: 
+                          {amount.toFixed(2)} {recommendedBudget.currency}/day
                         </li>
                       ))}
                     </ul>
-                    <p>Total for {duration} days: 
-                      <strong> {recommendedBudget.total_budget.toFixed(2)} {recommendedBudget.currency}</strong>
+                    <p>Total for {duration} days:
+                      <strong> {recommendedBudget.total_budget.toFixed(2)}
+                      {recommendedBudget.currency}</strong>
                     </p>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={applyRecommendedBudget}
                       className="apply-recommendation-btn"
+                      disabled={loading}
                     >
-                      Use Recommended Budget
+                      {loading ? 'Applying...' : 'Use Recommended Budget'}
                     </button>
                     <div className="budget-adjustment">
-                      <label>Adjust Budget (%):</label>
+                      <label>Adjust Budget (% of recommendation):</label>
                       <input
                         type="range"
                         min="50"
@@ -202,33 +242,50 @@ function TripForm({
                 )}
               </div>
             )}
-
-            {recommendedBudget && (
-              <div className="budget-range-indicator">
-                <p>Allowed budget range for {travelerType}:</p>
-                <p>
-                  {(recommendedBudget.total_budget * 0.5).toFixed(2)} - 
-                  {(recommendedBudget.total_budget * 1.5).toFixed(2)} 
-                  {recommendedBudget.currency}
-                </p>
-              </div>
-            )}
           </>
         )}
 
-        <button 
-          type="submit" 
+        <div className="form-group">
+          <button
+            type="button"
+            onClick={handleAddCollaboratorClick}
+            className="add-collaborator-btn"
+          >
+            {collaborators.length > 0
+              ? `Manage Collaborators (${collaborators.length})`
+              : 'Add Collaborators'}
+          </button>
+        </div>
+
+        <button
+          type="submit"
           className="submit-btn"
           disabled={(!isBudgetValid && showBudgetSection) || loading}
         >
-          {editingTripId ? "Update Trip" : "Add Trip"}
+          {loading ? (
+            <span>Processing...</span>
+          ) : editingTripId ? (
+            <span>Update Trip</span>
+          ) : (
+            <span>Add Trip</span>
+          )}
         </button>
-
-        {/* Show loading spinner while form is submitting */}
-        {loading && <LoadingIndicator />}
-
-        {validationError && <p className="validation-error">{validationError}</p>}
       </form>
+
+      {showCollaboratorModal && (
+        <Modal onClose={() => setShowCollaboratorModal(false)}>
+          <div className="collaborator-modal">
+            <h3>{editingTripId ? 'Manage' : 'Add'} Trip Collaborators</h3>
+            <CollaboratorManager
+              tripId={editingTripId}
+              initialCollaborators={collaborators}
+              onSave={handleSaveCollaborators}
+              onRemove={handleCollaboratorRemove}
+              isModal={true}
+            />
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

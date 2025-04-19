@@ -1,3 +1,4 @@
+
 /* General Layout */
 .home-container {
   display: flex;
@@ -17,22 +18,20 @@
 .dashboard-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
 }
 
-.add-expense-btn {
-  background: #334155;
-  color: white;
-  padding: 10px 15px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
+.dashboard-header > div {
+  display: flex;
+  flex-direction: column;
 }
 
-.add-expense-btn:hover {
-  background: #475569;
+.welcome-message {
+  color: #475569;
+  font-size: 1rem;
+  margin-top: 5px;
+  font-weight: 500;
 }
 
 /* Budget Summary */
@@ -75,6 +74,12 @@
 .progress-bar div {
   height: 100%;
   background: #334155;
+}
+
+.budget-text {
+  font-size: 0.9rem;
+  margin-top: 8px;
+  color: #64748b;
 }
 
 /* Transactions */
@@ -171,6 +176,7 @@
   text-align: center;
 }
 
+/* Settings Button */
 .settings-circle-btn {
   position: absolute;
   right: 20px;
@@ -196,4 +202,40 @@
 
 .settings-circle-btn svg {
   font-size: 20px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .budget-summary {
+    flex-direction: column;
+  }
+  
+  .trip-cards {
+    flex-direction: column;
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .settings-circle-btn {
+    position: relative;
+    right: auto;
+    top: auto;
+    margin-top: 15px;
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 15px;
+  }
+  
+  .recent-transactions table {
+    display: block;
+    overflow-x: auto;
+  }
 }

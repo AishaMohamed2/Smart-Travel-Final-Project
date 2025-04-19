@@ -164,3 +164,16 @@ html, body {
   margin-top: 5px;
   text-align: left;
 }
+
+.password-input-container {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  user-select: none;
+}

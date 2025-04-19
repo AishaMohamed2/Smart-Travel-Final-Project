@@ -11,4 +11,6 @@ urlpatterns = [
     path("expenses/<int:pk>/", views.ExpenseDeleteView.as_view(), name="expense-delete"),
     path("expenses/<int:pk>/update/", views.ExpenseUpdateView.as_view(), name="expense-update"),
     path("budget-recommendation/", views.BudgetRecommendationView.as_view(), name="budget-recommendation"),
+    path('trips/<int:trip_id>/collaborators/', views.TripCollaboratorsView.as_view(), name='trip-collaborators'),
+    path('users/verify/', views.UserVerificationView.as_view(), name='user-verify'),
 ]

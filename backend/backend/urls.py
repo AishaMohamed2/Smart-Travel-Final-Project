@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from api.views import CreateUserView, UserDetailView, UserUpdateView, UserDeleteView
+from api.views import CreateUserView, UserDetailView, UserUpdateView, UserDeleteView, CustomTokenObtainPairView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
@@ -13,4 +13,5 @@ urlpatterns = [
     path("api/user/", UserDetailView.as_view(), name="user-detail"),
     path("api/user/update/", UserUpdateView.as_view(), name="user-update"),
     path("api/user/delete/", UserDeleteView.as_view(), name="user-delete"),
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
 ]

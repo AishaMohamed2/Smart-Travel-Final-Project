@@ -5,7 +5,7 @@ import { useCurrency } from '../../utils/useCurrency';
 
 function ExpenseList({ expenses, handleEditExpense, handleDeleteExpense }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const { formatAmount } = useCurrency();
+  const { formatAmount, currency } = useCurrency();
 
   const confirmDelete = (expenseId) => {
     if (window.confirm("Are you sure you want to delete this expense?")) {
@@ -13,10 +13,8 @@ function ExpenseList({ expenses, handleEditExpense, handleDeleteExpense }) {
     }
   };
 
-  // Get unique categories from expenses
   const categories = ["All", ...new Set(expenses.map((expense) => expense.category))];
 
-  // Filter expenses based on selected category
   const filteredExpenses =
     selectedCategory === "All"
       ? expenses
@@ -26,7 +24,6 @@ function ExpenseList({ expenses, handleEditExpense, handleDeleteExpense }) {
     <div className="expense-list">
       <h3>Your Expenses</h3>
 
-      {/* Category Filter Dropdown */}
       <div className="category-filter">
         <label htmlFor="category">Filter by Category:</label>
         <select
@@ -42,26 +39,54 @@ function ExpenseList({ expenses, handleEditExpense, handleDeleteExpense }) {
         </select>
       </div>
 
-      {/* Expense List */}
       {filteredExpenses.length === 0 ? (
-       <p className="no-expense-message">No expenses added</p>
+        <p className="no-expense-message">No expenses found</p>
       ) : (
-        <ul>
+        <ul className="expense-list-items">
           {filteredExpenses.map((expense) => (
-            <li key={expense.id}>
+            <li key={expense.id} className="expense-item" onClick={() => handleEditExpense(expense)}>
               <div className="expense-details">
                 <h4>{expense.category}</h4>
-                <p>Amount: {formatAmount(expense.amount)}</p>
-                <p>Date: {expense.date}</p>
-                <p>Description: {expense.description}</p>
-                <p>Category: {expense.category}</p>
+                <p>
+                  <strong>Amount: </strong>
+                  <span className="value">{formatAmount(expense.amount)}</span>
+                  {expense.original_currency && expense.original_currency !== currency.code && (
+                    <span className="original-amount">
+                      (Original: {expense.original_amount} {expense.original_currency})
+                    </span>
+                  )}
+                </p>
+                <p>
+                  <strong>Date: </strong>
+                  <span className="value">{expense.date}</span>
+                </p>
+                <p>
+                  <strong>Description: </strong>
+                  <span className="value">{expense.description || 'N/A'}</span>
+                </p>
               </div>
-              <button onClick={() => handleEditExpense(expense)} className="edit-button">
-                <FaEdit />
-              </button>
-              <button onClick={() => confirmDelete(expense.id)} className="delete-button">
-                <FaTrash />
-              </button>
+              <div className="expense-actions">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditExpense(expense);
+                  }}
+                  className="edit-button"
+                  aria-label="Edit expense"
+                >
+                  <FaEdit />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    confirmDelete(expense.id);
+                  }}
+                  className="delete-button"
+                  aria-label="Delete expense"
+                >
+                  <FaTrash />
+                </button>
+              </div>
             </li>
           ))}
         </ul>

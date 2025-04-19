@@ -1,6 +1,4 @@
 /* Analytics.css */
-
-
 .analytics-page-container {
   display: flex;
   min-height: 100vh;
@@ -142,7 +140,7 @@
   margin: 0;
 }
 
-/* Progress bar */
+/* Progress bar styles */
 .progress-bar {
   height: 8px;
   background: #f1f5f9;
@@ -153,13 +151,19 @@
 
 .progress-bar-fill {
   height: 100%;
-  background: #3b82f6;
   border-radius: 4px;
-  transition: width 0.5s ease;
+  transition: width 0.5s ease, background-color 0.3s ease;
 }
 
-.progress-bar-fill.remaining {
-  background: #10b981;
+/* Color based on percentage */
+.progress-bar-fill.high {
+  background: #10b981; /* Green - more than 50% remaining */
+}
+.progress-bar-fill.medium {
+  background: #f59e0b; /* Amber - 25-50% remaining */
+}
+.progress-bar-fill.low {
+  background: #ef4444; /* Red - less than 25% remaining */
 }
 
 /* Chart Sections */

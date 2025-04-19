@@ -1,4 +1,3 @@
-// src/components/Form.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
 import api from "../api";
@@ -7,16 +6,21 @@ import "../styles/Form.css";
 import LoadingIndicator from "./LoadingIndicator";
 import logo from "../assets/logo.png"; 
 import { validatePassword, getPasswordStrength } from "../utils/passwordUtils";
+import { RxEyeOpen } from "react-icons/rx";
+import { GoEyeClosed } from "react-icons/go";
 
 function Form({ route, method }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [apiError, setApiError] = useState("");
     const [isTypingPassword, setIsTypingPassword] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const navigate = useNavigate(); 
     const name = method === "login" ? "Sign In" : "Sign Up";
 
@@ -37,6 +41,9 @@ function Form({ route, method }) {
         if (method === "register") {
             if (!firstName.trim()) newErrors.firstName = "First name is required.";
             if (!lastName.trim()) newErrors.lastName = "Last name is required.";
+            if (password !== confirmPassword) {
+                newErrors.confirmPassword = "Passwords do not match";
+            }
         }
 
         setErrors(newErrors);
@@ -47,17 +54,17 @@ function Form({ route, method }) {
         e.preventDefault();
         setLoading(true);
         setApiError("");
-
+    
         if (!validateForm()) {
             setLoading(false);
             return;
         }
-
+    
         try {
             const data = method === "login"
                 ? { email, password }
                 : { email, password, first_name: firstName, last_name: lastName };
-
+    
             const res = await api.post(route, data);
             
             if (method === "login") {
@@ -68,8 +75,50 @@ function Form({ route, method }) {
                 navigate("/login");
             }
         } catch (error) {
-            if (error.response && error.response.data) {
-                setApiError(error.response.data.detail || "An error occurred. Please try again.");
+            if (error.response) {
+                // Handle registration errors
+                if (method === "register") {
+                    if (error.response.status === 400) {
+                        if (error.response.data.email) {
+                            // Email already exists
+                            setApiError("An account with this email already exists. Please log in.");
+                        } else if (error.response.data.password) {
+                            // Password validation failed
+                            setApiError("Password requirements not met: " + error.response.data.password.join(' '));
+                        } else {
+                            // Other registration errors
+                            setApiError("Registration failed. Please check your information.");
+                        }
+                    } else {
+                        setApiError("Registration failed. Please try again.");
+                    }
+                } 
+                // Handle login errors
+                else if (method === "login") {
+                    if (error.response.status === 401) {
+                        if (error.response.data.detail === "No active account found with the given credentials") {
+                            // Check if email exists but password is wrong
+                            try {
+                                const checkUser = await api.get(`/api/user/check-email/?email=${email}`);
+                                if (checkUser.data.exists) {
+                                    setApiError("Incorrect password. Please try again.");
+                                } else {
+                                    setApiError("No account found with this email. Please register.");
+                                }
+                            } catch {
+                                setApiError("Incorrect email or password. Please try again.");
+                            }
+                        } else {
+                            setApiError("Login failed. Please try again.");
+                        }
+                    } else if (error.response.status === 400) {
+                        setApiError("Invalid request. Please check your input.");
+                    } else {
+                        setApiError("Login failed. Please try again.");
+                    }
+                }
+            } else if (error.request) {
+                setApiError("Network error. Please check your connection and try again.");
             } else {
                 setApiError("Something went wrong. Please try again.");
             }
@@ -126,25 +175,34 @@ function Form({ route, method }) {
                             />
                             {errors.email && <p className="error-text">{errors.email}</p>}
                         </div>
+
                         <div className="input-group">
-                <input
-                    className={`form-input ${errors.password ? "error" : ""}`}
-                    type="password"
-                    value={password}
-                    onChange={(e) => {
-                        setPassword(e.target.value);
-                        setIsTypingPassword(e.target.value.length > 0);
-                    }}
-                    placeholder="Password"
-                />
-                {method === "register" && isTypingPassword && (
-                    <>
-                        <div className="password-strength-meter">
-                            <div 
-                                className={`strength-bar ${getPasswordStrength(password) > 0 ? "active" : ""}`}
-                                style={{width: `${getPasswordStrength(password) * 20}%`}}
-                            ></div>
-                        </div>
+                            <div className="password-input-container">
+                                <input
+                                    className={`form-input ${errors.password ? "error" : ""}`}
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value);
+                                        setIsTypingPassword(e.target.value.length > 0);
+                                    }}
+                                    placeholder="Password"
+                                />
+                                <span 
+                                    className="password-toggle"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? <RxEyeOpen /> : <GoEyeClosed />}
+                                </span>
+                            </div>
+                            {method === "register" && isTypingPassword && (
+                                <>
+                                    <div className="password-strength-meter">
+                                        <div 
+                                            className={`strength-bar ${getPasswordStrength(password) > 0 ? "active" : ""}`}
+                                            style={{width: `${getPasswordStrength(password) * 20}%`}}
+                                        ></div>
+                                    </div>
                                     <div className="password-hint">
                                         Password must contain: 8+ characters, uppercase, lowercase, number, and special character.
                                     </div>
@@ -153,9 +211,26 @@ function Form({ route, method }) {
                             {errors.password && <p className="error-text">{errors.password}</p>}
                         </div>
 
-                        <div className="form-links">
-                            {method === "login" && <a href="#">Forgot password?</a>}
-                        </div>
+                        {method === "register" && (
+                            <div className="input-group">
+                                <div className="password-input-container">
+                                    <input
+                                        className={`form-input ${errors.confirmPassword ? "error" : ""}`}
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="Confirm Password"
+                                    />
+                                    <span 
+                                        className="password-toggle"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    >
+                                        {showConfirmPassword ? <RxEyeOpen  /> : <GoEyeClosed />}
+                                    </span>
+                                </div>
+                                {errors.confirmPassword && <p className="error-text">{errors.confirmPassword}</p>}
+                            </div>
+                        )}
 
                         {loading && <LoadingIndicator />}
 

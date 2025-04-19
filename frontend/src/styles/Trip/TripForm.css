@@ -1,11 +1,11 @@
 .trip-form {
     width: 50%;
-    max-width: 400px; /* Prevents the form from being too wide */
+    max-width: 400px;
     background-color: #ffffff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin: auto; /* Centers the form */
+    margin: auto; 
 }
 
 .trip-form h2 {
@@ -29,7 +29,8 @@
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     width: 100%;
     padding: 12px 16px;
     border: 1px solid #e2e8f0;
@@ -132,7 +133,6 @@
 }
 
 
-/* Submit Button */
 .submit-btn {
     width: 100%;
     padding: 16px;
@@ -193,3 +193,19 @@
   .budget-range-indicator p:first-child {
     font-weight: bold;
   }
+
+  .add-collaborator-btn{
+    background-color: #404d6c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background 0.2s;
+  }
+
+
+.add-collaborator-btn:hover {
+    background-color: #1e293b;
+}

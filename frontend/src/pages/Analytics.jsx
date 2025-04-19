@@ -38,6 +38,16 @@ function Analytics() {
     }
   }, [selectedTripId]);
 
+  const filterTrips = (trips) => {
+    const now = new Date();
+    return trips.filter(trip => {
+      const startDate = new Date(trip.start_date);
+      const endDate = new Date(trip.end_date);
+      return endDate <= now || (startDate <= now && now <= endDate); // Include ended and ongoing
+    });
+  };
+  
+
   const fetchAllTripsData = async () => {
     setIsLoading(true);
     setError("");
@@ -45,10 +55,14 @@ function Analytics() {
       const response = await api.get("/api/trips/analytics/");
       const filteredTrips = filterTrips(response.data.trips);
       
+      // Calculate totals only for filtered trips
+      const totalBudget = filteredTrips.reduce((sum, trip) => sum + (trip.total_budget || 0), 0);
+      const totalSpent = filteredTrips.reduce((sum, trip) => sum + (trip.total_spent || 0), 0);
+      
       setAnalyticsData({
         trips: filteredTrips,
-        totalBudget: response.data.total_budget || 0,
-        totalSpent: response.data.total_spent || 0,
+        totalBudget,
+        totalSpent,
         categories: response.data.categories || {},
         dailySpending: response.data.daily_spending || {}
       });
@@ -58,15 +72,6 @@ function Analytics() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const filterTrips = (trips) => {
-    const now = new Date();
-    return trips.filter(trip => {
-      const endDate = new Date(trip.end_date);
-      const remainingDays = Math.ceil((endDate - now) / (1000 * 3600 * 24));
-      return remainingDays <= 0 || remainingDays === 1;
-    });
   };
 
   const fetchTripDetails = async (tripId) => {
@@ -109,6 +114,12 @@ function Analytics() {
     }
   };
 
+  const getProgressBarClass = (remainingPercentage) => {
+    if (remainingPercentage > 50) return 'high';
+    if (remainingPercentage > 25) return 'medium';
+    return 'low';
+  };
+
   const handleTripSelect = (tripId) => {
     setSelectedTripId(tripId);
   };
@@ -121,7 +132,6 @@ function Analytics() {
   };
 
   const getCategoryChartData = (categories) => {
-
     const categoryData = categories || {};
     
     const categoryLabels = {
@@ -178,7 +188,7 @@ function Analytics() {
       labels: ['Remaining Budget', 'Amount Spent'],
       datasets: [{
         data: [budget - spent, spent],
-        backgroundColor: ['#10b981', '#3b82f6'],
+        backgroundColor: ['#10b981', '#ef4444'],
         borderWidth: 1
       }]
     };
@@ -194,8 +204,8 @@ function Analytics() {
         <div className="analytics-container">
           <div className="no-analytics-message">
             <h2>No Analytics Available</h2>
-            <p>Analytics are only shown for trips that have ended or have one day left.</p>
-            <p>Start a new trip or wait for your current trips to complete to see analytics.</p>
+            <p>Analytics are only shown for trips that have ended or are ongoing.</p>
+            <p>Start a new trip</p>
             <button 
               onClick={() => navigate("/trips")} 
               className="create-trip-btn"
@@ -217,7 +227,6 @@ function Analytics() {
             <select 
               onChange={(e) => handleTripSelect(e.target.value)}
               value={selectedTripId}
-              
             >
               <option value="">All Trips</option>
               {analyticsData.trips.map(trip => (
@@ -244,7 +253,9 @@ function Analytics() {
                 <p className="amount">{formatAmount(analyticsData.totalSpent)}</p>
                 <div className="progress-bar">
                   <div 
-                    className="progress-bar-fill" 
+                    className={`progress-bar-fill ${getProgressBarClass(
+                      100 - calculatePercentage(analyticsData.totalSpent, analyticsData.totalBudget)
+                    )}`}
                     style={{ 
                       width: `${calculatePercentage(analyticsData.totalSpent, analyticsData.totalBudget)}%` 
                     }}
@@ -260,7 +271,9 @@ function Analytics() {
                 <p className="amount">{formatAmount(analyticsData.totalBudget - analyticsData.totalSpent)}</p>
                 <div className="progress-bar">
                   <div 
-                    className="progress-bar-fill remaining" 
+                    className={`progress-bar-fill ${getProgressBarClass(
+                      calculatePercentage(analyticsData.totalBudget - analyticsData.totalSpent, analyticsData.totalBudget)
+                    )}`}
                     style={{ 
                       width: `${calculatePercentage(analyticsData.totalBudget - analyticsData.totalSpent, analyticsData.totalBudget)}%` 
                     }}
@@ -409,10 +422,15 @@ function Analytics() {
                     <p className="amount">{formatAmount(tripDetails.total_budget - tripDetails.total_spent)}</p>
                     <div className="progress-bar">
                       <div 
-                        className="progress-bar-fill remaining" 
+                        className={`progress-bar-fill ${getProgressBarClass(
+                          calculatePercentage(
+                            tripDetails.total_budget - tripDetails.total_spent, 
+                            tripDetails.total_budget
+                          )
+                        )}`}
                         style={{ 
                           width: `${calculatePercentage(
-                            tripDetails.total_budget - tripDetails.total_spent, 
+                            tripDetails.total_spent, 
                             tripDetails.total_budget
                           )}%` 
                         }}

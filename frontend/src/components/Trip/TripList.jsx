@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { FaPlane, FaTrash, FaEdit } from "react-icons/fa";
 import "../../styles/Trip/TripList.css";
-import { useCurrency } from '../../utils/useCurrency'; 
-function TripList({ trips, handleEditTrip, handleDeleteTrip}) {
+import { useCurrency } from '../../utils/useCurrency';
+
+function TripList({ trips, handleEditTrip, handleDeleteTrip }) {
   const [selectedTravelerType, setSelectedTravelerType] = useState("All");
   const { formatAmount } = useCurrency();
 
@@ -35,7 +36,7 @@ function TripList({ trips, handleEditTrip, handleDeleteTrip}) {
         >
           {travelerTypes.map((type) => (
             <option key={type} value={type}>
-              {type}
+              {type.charAt(0).toUpperCase() + type.slice(1)}
             </option>
           ))}
         </select>
@@ -52,23 +53,45 @@ function TripList({ trips, handleEditTrip, handleDeleteTrip}) {
                 <FaPlane className="trip-icon" />
               </div>
               <div className="trip-details">
-                <h4>{trip.trip_name}</h4>
-                <p>Destination: {trip.destination}</p>
-                <p>Start Date: {trip.start_date}</p>
-                <p>End Date: {trip.end_date}</p>
-                <p>Total Budget: {formatAmount(trip.total_budget)}</p>
-                <p>Traveller Type: {trip.traveler_type}</p>
-              </div>
+  <h4>{trip.trip_name}</h4>
+  <p>
+    <strong>Destination: </strong>
+    <span className="value">{trip.destination}</span>
+  </p>
+  <p>
+    <strong>Start Date: </strong>
+    <span className="value">{trip.start_date}</span>
+  </p>
+  <p>
+    <strong>End Date: </strong>
+    <span className="value">{trip.end_date}</span>
+  </p>
+  <p>
+    <strong>Total Budget: </strong>
+    <span className="value">
+      {formatAmount(trip.total_budget)}
+
+    </span>
+  </p>
+  <p>
+    <strong>Traveller Type: </strong>
+    <span className="value">
+      {trip.traveler_type.charAt(0).toUpperCase() + trip.traveler_type.slice(1)}
+    </span>
+  </p>
+</div>
               <div className="trip-actions">
-                <button 
-                  onClick={() => handleEditTrip(trip)} 
+                <button
+                  onClick={() => handleEditTrip(trip)}
                   className="edit-button"
+                  aria-label="Edit trip"
                 >
                   <FaEdit />
                 </button>
-                <button 
-                  onClick={() => confirmDelete(trip.id)} 
+                <button
+                  onClick={() => confirmDelete(trip.id)}
                   className="delete-button"
+                  aria-label="Delete trip"
                 >
                   <FaTrash />
                 </button>
@@ -80,5 +103,6 @@ function TripList({ trips, handleEditTrip, handleDeleteTrip}) {
     </div>
   );
 }
+
 
 export default TripList;
