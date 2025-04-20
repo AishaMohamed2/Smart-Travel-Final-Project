@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import CustomUser, Trip, Expense
 from .serializers import UserSerializer, TripSerializer, ExpenseSerializer, CollaboratorSerializer
-from django.db.models import Sum, Q  # Added Q here
+from django.db.models import Sum, Q  
 from datetime import timedelta
 import requests
 from django.core.cache import cache
@@ -16,7 +16,16 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
 from collections import defaultdict
+import json
+from django.conf import settings
+import os
 
+# Load cost of living data from JSON file
+# File contains city-wise cost indices for different categories
+with open(os.path.join(settings.BASE_DIR, '../frontend/src/data/cost_of_living_indices.json'), 'r') as f:
+    cost_of_living_data = json.load(f)
+
+# track errors and debug information
 logger = logging.getLogger(__name__)
 
 # HELPER FUNCTIONS
@@ -56,12 +65,12 @@ def calculate_trip_analytics(trip):
         'total_spent': float(total_spent),
         'remaining_budget': float(trip.total_budget - total_spent),
         'daily_average': float(total_spent) / duration if duration > 0 else 0,
-        'category_spending': category_dict,  # Changed from 'categories' to 'category_spending'
+        'category_spending': category_dict, 
         'daily_spending': _get_daily_spending(trip)
     }
 
 def _get_daily_spending(trip):
-    """Generate daily spending breakdown between trip dates"""
+    #Generate daily spending breakdown between trip date
     daily_data = {}
     current_date = trip.start_date
     while current_date <= trip.end_date:
@@ -73,7 +82,7 @@ def _get_daily_spending(trip):
 
 # CORE USER VIEWS
 class CreateUserView(generics.CreateAPIView):
-    """Endpoint for creating new user accounts"""
+    #Endpoint for creating new user accounts
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
@@ -607,124 +616,132 @@ class TripAnalyticsView(APIView):
 # BUDGET RECOMMENDATION VIEW 
 class BudgetRecommendationView(APIView):
     permission_classes = [IsAuthenticated]
-    
-    DEFAULT_COSTS = {
-        'food': 30,
-        'transport': 10,
-        'accommodation': 80,
-        'currency': 'GBP'
-    }
 
     def post(self, request):
+        """
+        Get budget recommendations for a trip to a specific city based on traveler type
+        """
         try:
             city = request.data.get('city')
+            traveler_type = request.data.get('traveler_type', 'medium')
+            duration = int(request.data.get('duration', 7))
+
             if not city:
-                logger.error("City parameter missing in request")
                 return Response(
                     {"error": "City parameter is required"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Load cost data from JSON
             cost_data = self._get_city_cost_data(city)
-            traveler_type = request.data.get('traveler_type', 'medium')
-            duration = int(request.data.get('duration', 7))
-            user_currency = getattr(request.user, 'currency', 'GBP')
+            if not cost_data:
+                return Response(
+                    {"error": f"Cost data not available for {city}. Please try a major city."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
+            # Calculate adjusted costs based on traveler type
             multipliers = {
                 "luxury": 1.8,
                 "medium": 1.0,
                 "budget": 0.6
             }
+            
+            # Use the indices directly from the JSON data
+            daily_costs = {
+                'food and dining': (cost_data['groceries_index'] + cost_data['restaurant_index']) / 2,  # Average of both
+                'accommodation': cost_data['rent_index'],
+                'general': cost_data['index'],
+                'entertainment': cost_data['purchasing_index']
+            }
+            
+            # Apply traveler type multiplier to relevant categories
             adjusted_costs = {
-                'food': cost_data['food'] * multipliers.get(traveler_type, 1.0),
-                'transport': cost_data['transport'] * multipliers.get(traveler_type, 1.0),
-                'accommodation': cost_data['accommodation'] * multipliers.get(traveler_type, 1.0)
+                'food and dining': daily_costs['food and dining'] * multipliers.get(traveler_type, 1.0),
+                'accommodation': daily_costs['accommodation'] * multipliers.get(traveler_type, 1.0),
+                'general': daily_costs['general'] * multipliers.get(traveler_type, 1.0),
+                'entertainment': daily_costs['entertainment'] * multipliers.get(traveler_type, 1.0),
             }
 
+            # Convert to user's currency if needed
+            user_currency = getattr(request.user, 'currency', 'GBP')
             converted_costs = self._convert_currency(
                 adjusted_costs,
-                cost_data['currency'],
+                cost_data['currency_type'],
                 user_currency
             )
 
-            total = sum(converted_costs.values()) * duration
-            total = round(total, 2)
+            # Calculate totals
+            daily_total = sum(converted_costs.values())  # Sum ALL categories
+            total_budget = round(daily_total * duration, 2)
+            converted_costs = {k: round(v, 2) for k, v in converted_costs.items()}
 
             return Response({
                 'city': city,
                 'daily_breakdown': converted_costs,
-                'total_budget': total,
+                'daily_total': round(daily_total, 2),
+                'total_budget': total_budget,
                 'currency': user_currency,
-                'is_estimate': cost_data.get('is_estimate', False),
                 'traveler_type': traveler_type,
                 'duration_days': duration,
-                'source_currency': cost_data['currency']
+                'source_currency': cost_data['currency_type'],
+                'is_converted': user_currency != cost_data['currency_type']
             })
 
         except Exception as e:
             logger.error(f"Budget recommendation error: {str(e)}")
             return Response(
-                {"error": "Could not generate budget recommendation"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
-    
+
     def _get_city_cost_data(self, city):
-        cache_key = f"city_cost_{city.lower()}"
-        if cached := cache.get(cache_key):
-            return cached
-            
-        try:
-            response = requests.get(
-                "https://cities-cost-of-living1.p.rapidapi.com/cost_of_living",
-                headers={
-                    "X-RapidAPI-Key": "your-api-key",
-                    "X-RapidAPI-Host": "cities-cost-of-living1.p.rapidapi.com"
-                },
-                params={'city': city},
-                timeout=5
-            )
-            data = response.json()
-            
-            result = {
-                'food': float(data.get('food_index', self.DEFAULT_COSTS['food'])),
-                'transport': float(data.get('transport_index', self.DEFAULT_COSTS['transport'])),
-                'accommodation': float(data.get('rent_index', self.DEFAULT_COSTS['accommodation'])),
-                'currency': data.get('currency_code', 'GBP'),
-                'is_estimate': False
-            }
-            
-            cache.set(cache_key, result, timeout=86400)
-            return result
-            
-        except requests.RequestException:
-            return {
-                **self.DEFAULT_COSTS,
-                'is_estimate': True,
-                'note': f"Using default values for {city}"
-            }
-    
+        """Fetch cost of living data from our JSON data"""
+        # Try to find the city in our data (case insensitive)
+        city_lower = city.lower()
+        
+        # First try exact match
+        for city_name, data in cost_of_living_data.items():
+            if city_lower == city_name.lower():
+                return data
+                
+        # If not found, try to find a partial match
+        for city_name, data in cost_of_living_data.items():
+            if city_lower in city_name.lower():
+                return data
+                
+        return None
+
     def _convert_currency(self, costs, from_currency, to_currency):
+        """Convert costs to user's preferred currency"""
         if from_currency == to_currency:
             return costs
-            
+
         cache_key = f"exchange_rate_{from_currency}_{to_currency}"
         try:
+            # Try to get cached rate first
             if cached_rate := cache.get(cache_key):
-                return {k: v * cached_rate for k, v in costs.items()}
-                
+                return {k: round(v * cached_rate, 2) for k, v in costs.items()}
+
             response = requests.get(
                 f"https://api.exchangerate-api.com/v4/latest/{from_currency}",
                 timeout=5
             )
+            response.raise_for_status()
             data = response.json()
-            rate = data['rates'].get(to_currency, 1)
-            
-            cache.set(cache_key, rate, timeout=3600)
-            return {k: v * rate for k, v in costs.items()}
-            
-        except Exception:
-            return costs
+            rate = data['rates'].get(to_currency)
 
+            if not rate:
+                raise Exception(f"No exchange rate available for {to_currency}")
+
+            # Cache rate for 1 hour
+            cache.set(cache_key, rate, timeout=3600)
+            return {k: round(v * rate, 2) for k, v in costs.items()}
+
+        except Exception as e:
+            logger.error(f"Currency conversion failed: {str(e)}")
+            raise Exception("Currency conversion service unavailable. Using original values.")
+        
 class TripCollaboratorsView(APIView):
     permission_classes = [IsAuthenticated]
 
