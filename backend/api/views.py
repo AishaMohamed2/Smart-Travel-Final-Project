@@ -1,11 +1,19 @@
+""" Title: <Django & React Web App Tutorial - Authentication, Databases, Deployment & More...>
+Author: <Tech with Tim>
+Date: <26/03/2024>
+Code version: <n/a>
+Availability: <https://www.youtube.com/watch?v=c-QsfbznSXI> 
+views for user and trip inspired by this video.
+"""
+
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, serializers, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import CustomUser, Trip, Expense
-from .serializers import UserSerializer, TripSerializer, ExpenseSerializer, CollaboratorSerializer
-from django.db.models import Sum, Q  
+from .serializers import UserSerializer, TripSerializer, ExpenseSerializer, TripmateSerializer
+from django.db.models import Sum, Q  # Added Q here
 from datetime import timedelta
 import requests
 from django.core.cache import cache
@@ -21,11 +29,9 @@ from django.conf import settings
 import os
 
 # Load cost of living data from JSON file
-# File contains city-wise cost indices for different categories
 with open(os.path.join(settings.BASE_DIR, '../frontend/src/data/cost_of_living_indices.json'), 'r') as f:
     cost_of_living_data = json.load(f)
 
-# track errors and debug information
 logger = logging.getLogger(__name__)
 
 # HELPER FUNCTIONS
@@ -36,20 +42,20 @@ def calculate_trip_analytics(trip):
     - Category breakdowns
     - Daily spending patterns
     """
-    # Get expenses for the trip (works for both owners and collaborators)
+    # Get expenses for the trip (works for both owners and tripmate)
     expenses = trip.expenses.all()
     total_spent = expenses.aggregate(total=Sum('amount'))['total'] or 0
     duration = (trip.end_date - trip.start_date).days + 1
     
 
-    # Get category spending in the expected format
+    # Groups expenses by category (e.g., food, transport) and adds up how much was spent in each.
     category_data = expenses.values('category').annotate(total=Sum('amount'))
     category_dict = {
         item['category']: float(item['total'])
         for item in category_data
     }
     
-    # Ensure all expected categories exist with at least 0 value
+    # All categories are listed, even if unused
     expected_categories = ['food', 'transport', 'accommodation', 'entertainment', 'other']
     for cat in expected_categories:
         if cat not in category_dict:
@@ -65,12 +71,12 @@ def calculate_trip_analytics(trip):
         'total_spent': float(total_spent),
         'remaining_budget': float(trip.total_budget - total_spent),
         'daily_average': float(total_spent) / duration if duration > 0 else 0,
-        'category_spending': category_dict, 
+        'category_spending': category_dict,  # Changed from 'categories' to 'category_spending'
         'daily_spending': _get_daily_spending(trip)
     }
 
 def _get_daily_spending(trip):
-    #Generate daily spending breakdown between trip date
+    """Generate daily spending breakdown between trip dates"""
     daily_data = {}
     current_date = trip.start_date
     while current_date <= trip.end_date:
@@ -81,8 +87,9 @@ def _get_daily_spending(trip):
     return daily_data
 
 # CORE USER VIEWS
+#REUSED FROM Tech with Tim (LINE 91-95)
 class CreateUserView(generics.CreateAPIView):
-    #Endpoint for creating new user accounts
+    """Endpoint for creating new user accounts"""
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
@@ -90,7 +97,7 @@ class CreateUserView(generics.CreateAPIView):
     def perform_create(self, serializer):
         """Handle password hashing during user creation"""
         user = serializer.save()
-        user.set_password(serializer.validated_data['password'])
+        user.set_password(serializer.validated_data['password']) #hashed passwored security 
         user.save()
 
 class UserDetailView(RetrieveAPIView):
@@ -164,6 +171,7 @@ class UserDeleteView(DestroyAPIView):
         return Response({"message": "Account deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    # “Authentication Failed,” but this is a custom version for specific message
     def post(self, request, *args, **kwargs):
         try:
             return super().post(request, *args, **kwargs)
@@ -178,14 +186,16 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class TripListCreate(generics.ListCreateAPIView):
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
-
+    
+    #User's trips and any shared trips added to as a tripmate.
     def get_queryset(self):
         user = self.request.user
         return Trip.objects.filter(
-            Q(user=user) | Q(collaborators=user)
-        ).distinct().prefetch_related('collaborators')
+            Q(user=user) | Q(tripmate=user)
+        ).distinct().prefetch_related('tripmate')
 
     def perform_create(self, serializer):
+        """ assigns trip creator as trip owner and sets to their preferred currency"""
         serializer.save(user=self.request.user, currency=self.request.user.currency)
 
     def get_serializer_context(self):
@@ -301,12 +311,16 @@ class ExpenseListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """Only include those related to trips where the current user is
+          either the user or the tripmate. """
+
         return Expense.objects.filter(
             Q(trip__user=self.request.user) | 
-            Q(trip__collaborators=self.request.user)
+            Q(trip__tripmate=self.request.user)
         ).distinct()
 
     def perform_create(self, serializer):
+        """Checks if the user has permission to add expenses to the trip. """
         trip = serializer.validated_data['trip']
         if not trip.is_user_allowed(self.request.user):
             raise serializers.ValidationError("You can only add expenses to trips you own or collaborate on.")
@@ -325,9 +339,9 @@ class ExpenseUpdateView(generics.UpdateAPIView):
     def get_queryset(self):
         return Expense.objects.filter(
             Q(trip__user=self.request.user) | 
-            Q(trip__collaborators=self.request.user)
+            Q(trip__tripmate=self.request.user)
         ).distinct()
-
+    """checks if the user is allowed to modify the expense"""
     def perform_update(self, serializer):
         trip = serializer.validated_data['trip']
         if not trip.is_user_allowed(self.request.user):
@@ -347,13 +361,14 @@ class ExpenseDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Allow deletion for trip owners and collaborators"""
+        """Allow deletion for trip owners and tripmate"""
         return Expense.objects.filter(
             Q(trip__user=self.request.user) | 
-            Q(trip__collaborators=self.request.user)
+            Q(trip__tripmate=self.request.user)
         ).distinct()
 
     def perform_destroy(self, instance):
+        """checks if the user is allowed to delete the expense"""
         if not instance.trip.is_user_allowed(self.request.user):
             raise serializers.ValidationError(
                 "You can only delete expenses for trips you own or collaborate on."
@@ -369,7 +384,7 @@ class AllTripsAnalyticsView(APIView):
         try:
             # Get both owned and collaborated trips
             trips = Trip.objects.filter(
-                Q(user=request.user) | Q(collaborators=request.user)
+                Q(user=request.user) | Q(tripmate=request.user)
             ).distinct()
             
             if not trips.exists():
@@ -511,7 +526,7 @@ class TripAnalyticsView(APIView):
         try:
             trip = get_object_or_404(Trip, id=trip_id)
             
-            # Check if user is owner or collaborator
+            # Check if user is owner or tripmate
             if not trip.is_user_allowed(request.user):
                 return Response(
                     {"error": "Not authorized to view this trip's analytics"},
@@ -647,7 +662,7 @@ class BudgetRecommendationView(APIView):
                 "budget": 0.6
             }
             
-            # Use the indices directly from the JSON data
+            # Use directly from the JSON data
             daily_costs = {
                 'food and dining': (cost_data['groceries_index'] + cost_data['restaurant_index']) / 2,  # Average of both
                 'accommodation': cost_data['rent_index'],
@@ -696,8 +711,8 @@ class BudgetRecommendationView(APIView):
             )
 
     def _get_city_cost_data(self, city):
-        """Fetch cost of living data from our JSON data"""
-        # Try to find the city in our data (case insensitive)
+        """Fetch cost of living data from JSON data"""
+        # Try to find the city in data 
         city_lower = city.lower()
         
         # First try exact match
@@ -742,17 +757,17 @@ class BudgetRecommendationView(APIView):
             logger.error(f"Currency conversion failed: {str(e)}")
             raise Exception("Currency conversion service unavailable. Using original values.")
         
-class TripCollaboratorsView(APIView):
+class TripTripmateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, trip_id):
         trip = get_object_or_404(Trip, id=trip_id)
         
-        # Check if user is owner or collaborator
+        # Check if user is owner or tripmate
         if not trip.is_user_allowed(request.user):
             return Response({'detail': 'Not authorized'}, status=403)
 
-        collaborators = trip.collaborators.all()
+        tripmate = trip.tripmate.all()
         return Response({
             'status': 'success',
             'data': {
@@ -762,7 +777,7 @@ class TripCollaboratorsView(APIView):
                     'first_name': trip.user.first_name,
                     'last_name': trip.user.last_name
                 },
-                'collaborators': CollaboratorSerializer(collaborators, many=True).data,
+                'tripmate': TripmateSerializer(tripmate, many=True).data,
                 'is_owner': request.user.id == trip.user.id
             }
         })
@@ -771,7 +786,7 @@ class TripCollaboratorsView(APIView):
         trip = get_object_or_404(Trip, id=trip_id)
         
         if request.user != trip.user:
-            return Response({'detail': 'Only the trip owner can add collaborators'}, status=403)
+            return Response({'detail': 'Only the trip owner can add tripmate'}, status=403)
         
         email = request.data.get('email', '').strip().lower()
         if not email:
@@ -781,28 +796,29 @@ class TripCollaboratorsView(APIView):
             # Verify user exists first
             user_to_add = CustomUser.objects.get(email=email)
             
-            if trip.collaborators.filter(id=user_to_add.id).exists():
-                return Response({'detail': 'User is already a collaborator'}, status=400)
+            if trip.tripmate.filter(id=user_to_add.id).exists():
+                return Response({'detail': 'User is already a tripmate'}, status=400)
             
             if user_to_add.id == request.user.id:
-                return Response({'detail': 'You cannot add yourself as a collaborator'}, status=400)
+                return Response({'detail': 'You cannot add yourself as a tripmate'}, status=400)
             
-            trip.collaborators.add(user_to_add)
+            trip.tripmate.add(user_to_add)
             
             return Response({
                 'status': 'success',
-                'message': 'Collaborator added successfully',
-                'user': CollaboratorSerializer(user_to_add).data
+                'message': 'tripmate added successfully',
+                'user': TripmateSerializer(user_to_add).data
             }, status=200)
             
         except CustomUser.DoesNotExist:
             return Response({'detail': 'User with this email does not exist'}, status=404)
 
     def delete(self, request, trip_id):
+        """Allow the trip owner to remove a tripmate by providing their email"""
         trip = get_object_or_404(Trip, id=trip_id)
 
         if request.user != trip.user:
-            return Response({'detail': 'Only the trip owner can remove collaborators'}, status=403)
+            return Response({'detail': 'Only the trip owner can remove tripmate'}, status=403)
 
         email = request.data.get('email', '').strip().lower()
         if not email:
@@ -810,12 +826,13 @@ class TripCollaboratorsView(APIView):
 
         try:
             user_to_remove = CustomUser.objects.get(email=email)
-            trip.collaborators.remove(user_to_remove)
-            return Response({'detail': 'Collaborator removed successfully'}, status=200)
+            trip.tripmate.remove(user_to_remove)
+            return Response({'detail': 'tripmate removed successfully'}, status=200)
         except CustomUser.DoesNotExist:
             return Response({'detail': 'User not found'}, status=404)
         
 class UserVerificationView(APIView):
+    """Allows an authenticated user to verify if another user exists by their email for tripmate"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

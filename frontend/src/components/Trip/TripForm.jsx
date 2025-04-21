@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Dropdown from './Dropdown';
 import '../../styles/Trip/TripForm.css';
 import LoadingIndicator from '../LoadingIndicator';
-import CollaboratorManager from '../CollaboratorManager';
+import TripmateManager from './TripmateManager';
 import Modal from '../Modal';
 import api from '../../api';
 
@@ -29,28 +29,29 @@ function TripForm({
   const [isBudgetValid, setIsBudgetValid] = useState(true);
   const [showBudgetSection, setShowBudgetSection] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
-  const [collaborators, setCollaborators] = useState([]);
-  const [initialCollaboratorsLoaded, setInitialCollaboratorsLoaded] = useState(false);
+  const [showTripmateModal, setShowTripmateModal] = useState(false);
+  const [tripmate, setTripmate] = useState([]);
+  const [initialTripmateLoaded, setInitialTripmateLoaded] = useState(false);
 
+  // Load tripmates if editing an existing trip
   useEffect(() => {
     if (editingTripId) {
-      const fetchCollaborators = async () => {
+      const fetchTripmate = async () => {
         try {
-          const response = await api.get(`/api/trips/${editingTripId}/collaborators/`);
-          setCollaborators(response.data.data?.collaborators || []);
-          setInitialCollaboratorsLoaded(true);
+          const response = await api.get(`/api/trips/${editingTripId}/tripmate/`);
+          setTripmate(response.data.data?.tripmate || []);
+          setInitialTripmateLoaded(true);
         } catch (error) {
-          console.error("Failed to load collaborators:", error);
+          console.error("Failed to load tripmate:", error);
         }
       };
 
-      if (!initialCollaboratorsLoaded) {
-        fetchCollaborators();
+      if (!initialTripmateLoaded) {
+        fetchTripmate();
       }
     } else {
-      setCollaborators([]);
-      setInitialCollaboratorsLoaded(false);
+      setTripmate([]);
+      setInitialTripmateLoaded(false);
     }
   }, [editingTripId]);
 
@@ -85,7 +86,7 @@ function TripForm({
     e.preventDefault();
     setLoading(true);
     try {
-      await handleSubmit(e, collaborators);
+      await handleSubmit(e, tripmate);
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
@@ -93,17 +94,17 @@ function TripForm({
     }
   };
 
-  const handleAddCollaboratorClick = () => {
-    setShowCollaboratorModal(true);
+  const handleAddTripmateClick = () => {
+    setShowTripmateModal(true);
   };
 
-  const handleSaveCollaborators = (newCollaborators) => {
-    setCollaborators(newCollaborators);
-    setShowCollaboratorModal(false);
+  const handleSaveTripmate = (newTripmate) => {
+    setTripmate(newTripmate);
+    setShowTripmateModal(false);
   };
 
-  const handleCollaboratorRemove = (userId) => {
-    setCollaborators(collaborators.filter(c => c.id !== userId));
+  const handleTripmateRemove = (userId) => {
+    setTripmate(tripmate.filter(c => c.id !== userId));
   };
 
   return (
@@ -184,13 +185,29 @@ function TripForm({
               />
               {recommendedBudget && !isBudgetValid && (
                 <p className="validation-warning">
-                  Budget for this traveler type must be between
+                  Budget for this traveler type must be between 
                   {(recommendedBudget.total_budget * 0.5).toFixed(2)} and
                   {(recommendedBudget.total_budget * 1.5).toFixed(2)}
                   {recommendedBudget.currency}
                 </p>
               )}
             </div>
+            <div className="budget-adjustment">
+                      <label>Adjust Budget using slider:</label>
+                      <input
+                        type="range"
+                        min="50"
+                        max="150"
+                        defaultValue="100"
+                        onChange={(e) => {
+                          const adjustment = parseFloat(e.target.value) / 100;
+                          const adjustedBudget = recommendedBudget.total_budget * adjustment;
+                          handleTotalBudgetChange({
+                            target: { value: adjustedBudget.toFixed(2) }
+                          });
+                        }}
+                      />
+                    </div>
 
             {destination && travelerType && duration > 0 && (
               <div className="budget-recommendation">
@@ -220,22 +237,7 @@ function TripForm({
                     >
                       {loading ? 'Applying...' : 'Use Recommended Budget'}
                     </button>
-                    <div className="budget-adjustment">
-                      <label>Adjust Budget (% of recommendation):</label>
-                      <input
-                        type="range"
-                        min="50"
-                        max="150"
-                        defaultValue="100"
-                        onChange={(e) => {
-                          const adjustment = parseFloat(e.target.value) / 100;
-                          const adjustedBudget = recommendedBudget.total_budget * adjustment;
-                          handleTotalBudgetChange({
-                            target: { value: adjustedBudget.toFixed(2) }
-                          });
-                        }}
-                      />
-                    </div>
+
                   </>
                 ) : (
                   <p>No recommendation available for this destination</p>
@@ -248,12 +250,12 @@ function TripForm({
         <div className="form-group">
           <button
             type="button"
-            onClick={handleAddCollaboratorClick}
-            className="add-collaborator-btn"
+            onClick={handleAddTripmateClick}
+            className="add-tripmate-btn"
           >
-            {collaborators.length > 0
-              ? `Manage Collaborators (${collaborators.length})`
-              : 'Add Collaborators'}
+            {tripmate.length > 0
+              ? `Manage tripmates (${tripmate.length})`
+              : 'Add tripmates'}
           </button>
         </div>
 
@@ -272,15 +274,15 @@ function TripForm({
         </button>
       </form>
 
-      {showCollaboratorModal && (
-        <Modal onClose={() => setShowCollaboratorModal(false)}>
-          <div className="collaborator-modal">
-            <h3>{editingTripId ? 'Manage' : 'Add'} Trip Collaborators</h3>
-            <CollaboratorManager
+      {showTripmateModal && (
+        <Modal onClose={() => setShowTripmateModal(false)}>
+          <div className="tripmate-modal">
+            <h3>{editingTripId ? 'Manage' : 'Add'} Trip Tripmates</h3>
+            <TripmateManager
               tripId={editingTripId}
-              initialCollaborators={collaborators}
-              onSave={handleSaveCollaborators}
-              onRemove={handleCollaboratorRemove}
+              initialTripmate={tripmate}
+              onSave={handleSaveTripmate}
+              onRemove={handleTripmateRemove}
               isModal={true}
             />
           </div>

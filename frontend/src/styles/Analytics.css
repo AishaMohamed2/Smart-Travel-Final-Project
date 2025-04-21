@@ -56,8 +56,8 @@
 }
 
 .view-all-btn {
-  padding: 0.75rem 1.25rem;
-  background-color: #f1f5f9;
+ 
+  background-color: #9cb2c8;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   cursor: pointer;
@@ -157,13 +157,13 @@
 
 /* Color based on percentage */
 .progress-bar-fill.high {
-  background: #10b981; /* Green - more than 50% remaining */
+  background: #10b981; 
 }
 .progress-bar-fill.medium {
-  background: #f59e0b; /* Amber - 25-50% remaining */
+  background: #f59e0b; 
 }
 .progress-bar-fill.low {
-  background: #ef4444; /* Red - less than 25% remaining */
+  background: #ef4444; 
 }
 
 /* Chart Sections */

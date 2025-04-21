@@ -10,12 +10,22 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+""" Title: <Django & React Web App Tutorial - Authentication, Databases, Deployment & More...>
+Author: <Tech with Tim>
+Date: <26/03/2024>
+Code version: <n/a>
+Availability: <https://www.youtube.com/watch?v=c-QsfbznSXI> 
+Lines reused specified below
+"""
+
+#REUSED FROM Tech with Tim (LINE 22-27)
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
+
 
 # Set the custom user model
 AUTH_USER_MODEL = 'api.CustomUser'  
@@ -33,8 +43,9 @@ SECRET_KEY = "django-insecure-nma=xi6x2p-crjg^ifqqkapyu1qjd0l=+wn)-rijk_o%$!k3w_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*"] #REUSED FROM Tech with Tim (LINE 46)
 
+#REUSED FROM Tech with Tim (LINE 49-56)
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -45,13 +56,14 @@ REST_FRAMEWORK = {
 }
 
 
+#REUSED FROM Tech with Tim (LINE 60-63)
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
+#REUSED FROM Tech with Tim (LINE 74-76)
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -64,6 +76,7 @@ INSTALLED_APPS = [
     "corsheaders",
 ]
 
+#REUSED FROM Tech with Tim (LINE 88)
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -74,6 +87,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
 ]
+
 
 ROOT_URLCONF = "backend.urls"
 
@@ -153,6 +167,7 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+#REUSED FROM Tech with Tim (LINE 171-172)
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
 

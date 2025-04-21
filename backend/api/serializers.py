@@ -1,3 +1,12 @@
+""" Title: <Django & React Web App Tutorial - Authentication, Databases, Deployment & More...>
+Author: <Tech with Tim>
+Date: <26/03/2024>
+Code version: <n/a>
+Availability: <https://www.youtube.com/watch?v=c-QsfbznSXI> 
+Serilizer for user inspired by this video but i wanted to use email so did a custom user
+"""
+
+
 from rest_framework import serializers
 from .models import CustomUser, Trip, Expense
 from django.utils import timezone
@@ -26,6 +35,10 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def validate_email(self, value):
+        """
+        Ensures email is unique and in lowercase.
+        Returns normalized email or raises ValidationError.
+        """
         if self.instance and self.instance.email == value:
             return value
         if CustomUser.objects.filter(email=value).exists():
@@ -157,8 +170,8 @@ class ExpenseSerializer(serializers.ModelSerializer):
         except requests.RequestException:
             return amount
 
-# COLLABORATOR SERIALIZER
-class CollaboratorSerializer(serializers.ModelSerializer):
+# TRIPMATE SERIALIZER
+class TripmateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'first_name', 'last_name']

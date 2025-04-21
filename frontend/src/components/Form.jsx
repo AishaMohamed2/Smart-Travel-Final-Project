@@ -1,3 +1,11 @@
+/*Title: <Django & React Web App Tutorial - Authentication, Databases, Deployment & More...>
+Author: <Tech with Tim>
+Date: <26/03/2024>
+Code version: <n/a>
+Availability: <https://www.youtube.com/watch?v=c-QsfbznSXI> 
+sign up and login inspired by this video with few lines reused
+*/
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
 import api from "../api";

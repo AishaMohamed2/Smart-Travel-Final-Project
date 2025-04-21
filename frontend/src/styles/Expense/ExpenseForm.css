@@ -1,11 +1,11 @@
 .expense-form {
   width: 50%;
-  max-width: 400px; 
+  max-width: 400px;
   background-color: #ffffff;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin: auto; 
+  margin: auto;
 }
 
 .expense-form h2 {
@@ -16,15 +16,16 @@
   font-weight: 600;
 }
 
+/* Form Elements */
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 25px;
 }
 
 .form-group label {
   display: block;
   font-size: 1rem;
-  font-weight: bold;
-  margin-bottom: 5px;
+  font-weight: 600;
+  margin-bottom: 10px;
   color: #0f172a;
 }
 
@@ -44,6 +45,37 @@
   min-height: 48px;
 }
 
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Disabled Input State */
+.form-group input:disabled {
+  background-color: #f8fafc;
+  cursor: not-allowed;
+}
+
+/* Validation Styles */
+.error-message {
+  color: #dc2626;
+  background-color: #fee2e2;
+  padding: 10px;
+  border-radius: 6px;
+  margin: 15px 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Button Styles */
 .expense-form button {
   width: 100%;
   padding: 16px;
@@ -55,8 +87,14 @@
   cursor: pointer;
   margin-top: 15px;
   transition: background 0.2s;
+  position: relative;
 }
 
 .expense-form button:hover {
   background-color: #1e293b;
+}
+
+.expense-form button:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
 }

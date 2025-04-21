@@ -1,3 +1,10 @@
+/* Title: react-living-app
+Author: djirdehh
+Date: August 2017
+Code version: n/a
+Availability: https://github.com/djirdehh/react-living-app
+City dropdown and cost of living copied from here as api was unreliable */
+
 const CITIES = {
     ALL: [
     { value: 'Albuquerque, NM, United States', label: 'Albuquerque, NM, United States' },

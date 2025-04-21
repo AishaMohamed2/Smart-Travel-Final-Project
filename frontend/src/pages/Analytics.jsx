@@ -12,7 +12,8 @@ ChartJS.register(
   CategoryScale, LinearScale, 
   BarElement, Title, LineElement, PointElement
 );
-
+  
+  // Currently selected trip ID for detailed view (empty  showing all trips)
 function Analytics() {
   const { formatAmount, currencySymbol } = useCurrency();
   const [analyticsData, setAnalyticsData] = useState({
@@ -44,6 +45,7 @@ function Analytics() {
       const startDate = new Date(trip.start_date);
       const endDate = new Date(trip.end_date);
       return endDate <= now || (startDate <= now && now <= endDate); // Include ended and ongoing
+    // Include ended and ongoing
     });
   };
   
@@ -86,7 +88,7 @@ function Analytics() {
         daily_spending: response.data.daily_spending ? 
           Object.fromEntries(
             Object.entries(response.data.daily_spending).map(([date, amount]) => [
-              formatDate(date),
+              formatDate(date), // Ensure all dates are formatted consistently
               amount
             ])
           ) : {},
@@ -166,6 +168,8 @@ function Analytics() {
       };
     }
 
+
+    // Sort dates chronologically for proper line chart
     const sortedDates = Object.keys(dailyData).sort((a, b) => new Date(a) - new Date(b));
     const amounts = sortedDates.map(date => dailyData[date]);
     
@@ -198,6 +202,7 @@ function Analytics() {
     return total > 0 ? Math.round((value / total) * 100) : 0;
   };
 
+  // Show empty state if no trips available (only for all trips view)
   if (!isLoading && analyticsData.trips.length === 0 && !selectedTripId) {
     return (
       <div className="analytics-page-container">

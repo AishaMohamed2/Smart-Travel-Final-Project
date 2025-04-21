@@ -1,3 +1,11 @@
+/* Title: <Django & React Web App Tutorial - Authentication, Databases, Deployment & More...>
+Author: <Tech with Tim>
+Date: <26/03/2024>
+Code version: <n/a>
+Availability: <https://www.youtube.com/watch?v=c-QsfbznSXI> 
+REUSED LOGIN,REGISTER, AND PROTECTED ROUTE
+*/
+
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";

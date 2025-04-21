@@ -5,7 +5,7 @@
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin: auto; 
+    margin: auto;
 }
 
 .trip-form h2 {
@@ -16,6 +16,7 @@
     font-weight: 600;
 }
 
+/* Form Elements */
 .form-group {
     margin-bottom: 25px;
 }
@@ -29,7 +30,8 @@
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     width: 100%;
     padding: 12px 16px;
     border: 1px solid #e2e8f0;
@@ -43,6 +45,11 @@
     min-height: 48px;
 }
 
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
@@ -50,7 +57,29 @@
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-/* Budget Recommendation Section */
+/* Validation Styles */
+.form-error {
+    color: #dc2626;
+    background-color: #fee2e2;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.invalid-budget {
+    border-color: #dc2626;
+    background-color: #fee2e2;
+}
+
+.validation-warning {
+    color: #d97706;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+/* Budget Section */
 .budget-recommendation {
     margin: 25px 0;
     padding: 20px;
@@ -86,22 +115,6 @@
     color: #0f172a;
 }
 
-.apply-recommendation-btn {
-    background: #0f172a;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-top: 10px;
-    font-size: 0.9rem;
-    transition: background 0.2s;
-}
-
-.apply-recommendation-btn:hover {
-    background: #1e293b;
-}
-
 /* Budget Adjustment */
 .budget-adjustment {
     margin-top: 15px;
@@ -131,6 +144,38 @@
     cursor: pointer;
 }
 
+/* Buttons */
+.apply-recommendation-btn {
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.apply-recommendation-btn:hover {
+    background: #1e293b;
+}
+
+.add-tripmate-btn {
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #0f172a;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.add-tripmate-btn:hover {
+    background: #f1f5f9;
+}
 
 .submit-btn {
     width: 100%;
@@ -143,68 +188,15 @@
     cursor: pointer;
     margin-top: 15px;
     transition: background 0.2s;
+    position: relative;
 }
 
 .submit-btn:hover {
     background-color: #1e293b;
 }
 
-.validation-error {
-    color: #dc2626;
-    margin-top: 20px;
-    text-align: center;
-    font-size: 0.95rem;
-    padding: 12px;
-    background-color: #fee2e2;
-    border-radius: 8px;
-    border: 1px solid #fca5a5;
-}
-
-
-.invalid-budget {
-    border-color: #ff9800;
-    background-color: #fff8e1;
-  }
-  
-  .validation-warning {
-    color: #f81616;
-    margin: 0.5rem 0;
-    font-size: 0.9rem;
-  }
-  
-  .submit-btn:disabled {
+.submit-btn:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
-  }
-  
-  .budget-range-indicator {
-    margin: 1rem 0;
-    padding: 0.8rem;
-    background-color: #f5f5f5;
-    border-radius: 4px;
-    font-size: 0.9rem;
-  }
-  
-  .budget-range-indicator p {
-    margin: 0.3rem 0;
-  }
-  
-  .budget-range-indicator p:first-child {
-    font-weight: bold;
-  }
-
-  .add-collaborator-btn{
-    background-color: #404d6c;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    margin-top: 15px;
-    transition: background 0.2s;
-  }
-
-
-.add-collaborator-btn:hover {
-    background-color: #1e293b;
 }
+

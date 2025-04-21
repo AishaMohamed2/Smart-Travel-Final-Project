@@ -15,6 +15,7 @@ function ExpenseList({ expenses, handleEditExpense, handleDeleteExpense }) {
 
   const categories = ["All", ...new Set(expenses.map((expense) => expense.category))];
 
+  // Filter the expenses based on the selected category
   const filteredExpenses =
     selectedCategory === "All"
       ? expenses

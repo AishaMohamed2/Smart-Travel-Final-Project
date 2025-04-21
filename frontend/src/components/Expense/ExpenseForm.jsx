@@ -18,19 +18,19 @@ function ExpenseForm({
   handleSubmit,
   error
 }) {
-  // Get the selected trip details
+  // Get the selected trip details ID
   const selectedTripDetails = trips.find(trip => trip.id === Number(selectedTrip));
 
-  // Calculate maximum allowed date (trip end date or today, whichever is earlier)
+  // Set the latest date the user can select for an expense
+  // It can't be after the trip end date or after today
   const today = new Date().toISOString().split('T')[0];
   const maxDate = selectedTripDetails 
     ? (selectedTripDetails.end_date > today ? today : selectedTripDetails.end_date)
     : today;
 
-  // State to manage loading status
+
   const [loading, setLoading] = useState(false);
 
-  // Handle form submission with loading state
   const handleFormSubmit = async (e) => {
     setLoading(true);
     await handleSubmit(e); 
@@ -103,7 +103,7 @@ function ExpenseForm({
           </select>
         </div>
 
-        {/* Show loading spinner while form is submitting */}
+
         {loading && <LoadingIndicator />}
 
         <button type="submit">

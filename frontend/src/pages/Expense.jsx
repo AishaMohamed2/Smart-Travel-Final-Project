@@ -5,9 +5,9 @@ import ExpenseList from "../components/Expense/ExpenseList";
 import "../styles/Expense/Expense.css";
 import { useCurrency } from '../utils/useCurrency';
 
-// Main Expense component
+
 function Expense() {
-  // State hooks to manage form inputs and expenses
+
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [category, setCategory] = useState("food");
@@ -20,8 +20,7 @@ function Expense() {
   const [currentTrip, setCurrentTrip] = useState(null);
   const [totalSpent, setTotalSpent] = useState(0);
   const { formatAmount } = useCurrency();
-  const [showSplitForm, setShowSplitForm] = useState(false);
-  const [expenseToSplit, setExpenseToSplit] = useState(null);
+
 
   // Fetching trips and expenses data from API 
   useEffect(() => {
@@ -70,23 +69,13 @@ function Expense() {
   // Calculate remaining budget for the selected trip
   const remainingBudget = currentTrip ? parseFloat(currentTrip.total_budget || 0) - totalSpent : 0;
 
-  const handleSplitClick = (expense) => {
-    setExpenseToSplit(expense);
-    setShowSplitForm(true);
-  };
-  
-  const handleSplitComplete = () => {
-    setShowSplitForm(false);
-    // Refresh expenses
-    fetchExpenses();
-  };
 
   // Handle form submission to add or update an expense
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Validate trip selection
+
     if (!selectedTrip) {
       setError("Please select a valid trip.");
       return;
@@ -100,20 +89,19 @@ function Expense() {
       return;
     }
 
-    // Validate amount input
+
     if (!amount || isNaN(amount)) {
       setError("Please enter a valid amount.");
       return;
     }
 
-    // Validate date input
     if (!date) {
       setError("Please select a date.");
       return;
     }
 
     try {
-      // Prepare expense data
+
       const expenseData = {
         trip: tripId,
         amount: parseFloat(amount),
@@ -123,7 +111,6 @@ function Expense() {
       };
 
       let updatedExpenses = [];
-      // If editing an existing expense, update it; otherwise, create a new one
       if (editingExpenseId) {
         const response = await api.put(`/api/expenses/${editingExpenseId}/update/`, expenseData);
         updatedExpenses = expenses.map((expense) => 

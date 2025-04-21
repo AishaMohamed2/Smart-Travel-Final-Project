@@ -6,14 +6,12 @@
   background-color: #ffffff;
 }
 
-/* Main Content */
 .main-content {
   flex-grow: 1;
   padding: 30px;
   background-color: #ffffff;
 }
 
-/* Trip Container */
 .trip-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -41,8 +39,9 @@
 }
 
 .error-message {
-  color: red;
+  color: #dc3545;
   text-align: center;
   margin-top: 15px;
+  font-weight: 500;
 }
 

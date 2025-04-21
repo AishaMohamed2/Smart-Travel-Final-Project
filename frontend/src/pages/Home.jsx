@@ -14,7 +14,7 @@ function Home() {
     const navigate = useNavigate();
     const { formatAmount } = useCurrency();
 
-    // Function to assign pastel colors to categories
+    // Function to assign to categories easier for user to differetiate
     const getCategoryColor = (category) => {
         const colors = {
             'food': '#FFD1DC', 
@@ -23,30 +23,26 @@ function Home() {
             'entertainment': '#E2F0CB', 
             'other': '#FFDAC1', 
         };
-        return colors[category] || '#E5E7EB'; // Default gray
+        return colors[category] || '#E5E7EB'; 
     };
 
     // Function to determine progress bar color
     const getProgressBarColor = (percentage) => {
-        if (percentage >= 100) return '#EF4444'; // Red when over budget
-        if (percentage >= 80) return '#F59E0B'; // Amber at 80%
-        return '#10B981'; // Green otherwise
+        if (percentage >= 100) return '#EF4444'; 
+        if (percentage >= 80) return '#F59E0B'; 
+        return '#10B981'; 
     };
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch user data first
+ 
                 const userResponse = await api.get("/api/user/");
                 setUserData(userResponse.data);
-                
-                // Fetch trips
                 const tripsResponse = await api.get("/api/trips/");
                 const today = new Date();
-                
                 // Filter out trips that have already ended
                 const filteredTrips = tripsResponse.data.filter(trip => new Date(trip.end_date) >= today);
-                
                 // Sort trips by start date (earliest first)
                 const sortedTrips = filteredTrips.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
                 setUpcomingTrips(sortedTrips.slice(0, 4));
@@ -57,7 +53,7 @@ function Home() {
 
                 // Fetch expenses
                 const expensesResponse = await api.get("/api/expenses/");
-                setRecentExpenses(expensesResponse.data.slice(0, 10)); // Show 10 most recent expenses
+                setRecentExpenses(expensesResponse.data.slice(0, 10)); 
                 
                 // Calculate total spent from expenses
                 const spentSum = expensesResponse.data.reduce((sum, expense) => sum + parseFloat(expense.amount || 0), 0);
@@ -90,7 +86,6 @@ function Home() {
 
     return (
         <div className="home-container">
-            {/* Main Content */}
             <div className="main-content">
                 <div className="dashboard-header">
                     <div>
@@ -104,7 +99,7 @@ function Home() {
                     </button>
                 </div>
 
-                {/* Budget Summary */}
+
                 <div className="budget-summary">
                     <div className="budget-card">
                         <h3>Total Budget</h3>
@@ -135,7 +130,7 @@ function Home() {
                     </div>
                 </div>
 
-                {/* Recent Transactions */}
+
                 <div className="recent-transactions">
                     <h3>Recent Transactions</h3>
                     <table>
@@ -167,7 +162,7 @@ function Home() {
                     </table>
                 </div>
 
-                {/* Upcoming Trips */}
+
                 <div className="upcoming-trips">
                     <h3>Upcoming Trips</h3>
                     <div className="trip-cards">

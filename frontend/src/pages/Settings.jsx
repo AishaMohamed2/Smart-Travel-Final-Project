@@ -26,6 +26,7 @@ function Settings() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const navigate = useNavigate();
 
+    // Prepare currency options for react-select
     const currencyOptions = currencies.map(currency => ({
         value: currency.code,
         label: `${currency.code} - ${currency.name}`,
@@ -116,7 +117,8 @@ function Settings() {
               updateData.new_password = formData.newPassword;
               updateData.confirm_password = formData.confirmPassword;
           }
-  
+          
+          // Send PATCH request to update user data
           const response = await api.patch('/api/user/update/', updateData);
           
           setSuccess('Settings saved successfully');

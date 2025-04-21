@@ -7,14 +7,14 @@
   background-color: #ffffff;
 }
 
-/* Main Content */
+
 .main-content {
   flex-grow: 1;
   padding: 30px;
   background-color: #ffffff;
 }
 
-/* Dashboard Header */
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;

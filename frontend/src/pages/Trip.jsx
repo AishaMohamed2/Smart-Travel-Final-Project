@@ -19,9 +19,9 @@ function Trip() {
     const [validationError, setValidationError] = useState("");
     const [recommendedBudget, setRecommendedBudget] = useState(null);
     const [loadingRecommendation, setLoadingRecommendation] = useState(false);
-    const [collaborators, setCollaborators] = useState([]);
-    const [initialCollaboratorsLoaded, setInitialCollaboratorsLoaded] = useState(false);
-    const [loadingCollaborators, setLoadingCollaborators] = useState(false);
+    const [tripmate, setTripmate] = useState([]);
+    const [initialTripmateLoaded, setInitialTripmateLoaded] = useState(false);
+    const [loadingTripmate, setLoadingTripmate] = useState(false);
     const navigate = useNavigate();
     const { formatAmount } = useCurrency();
 
@@ -37,6 +37,7 @@ function Trip() {
         fetchTrips();
     }, []);
 
+    // Function to calculate trip duration based on start and end dates
     const calculateDuration = (start, end) => {
         if (!start || !end) return 0;
         const startDate = new Date(start);
@@ -44,32 +45,34 @@ function Trip() {
         return Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
     };
 
+    // Fetch tripmates for the currently edited trip
     useEffect(() => {
         const controller = new AbortController();
         
-        const fetchCollaborators = async () => {
-            if (editingTripId && !initialCollaboratorsLoaded) {
-                setLoadingCollaborators(true);
+        const fetchTripmate = async () => {
+            if (editingTripId && !initialTripmateLoaded) {
+                setLoadingTripmate(true);
                 try {
-                    const response = await api.get(`/api/trips/${editingTripId}/collaborators/`, {
+                    const response = await api.get(`/api/trips/${editingTripId}/tripmate/`, {
                         signal: controller.signal
                     });
-                    setCollaborators(response.data.data?.collaborators || []);
-                    setInitialCollaboratorsLoaded(true);
+                    setTripmate(response.data.data?.tripmate || []);
+                    setInitialTripmateLoaded(true);
                 } catch (error) {
                     if (error.name !== 'AbortError') {
-                        console.error("Failed to load collaborators:", error);
+                        console.error("Failed to load tripmate:", error);
                     }
                 } finally {
-                    setLoadingCollaborators(false);
+                    setLoadingTripmate(false);
                 }
             }
         };
 
-        fetchCollaborators();
+        fetchTripmate();
         return () => controller.abort();
-    }, [editingTripId, initialCollaboratorsLoaded]);
-
+    }, [editingTripId, initialTripmateLoaded]);
+ 
+    // Fetch budget recommendation whenever necessary these fields change (destination, travelerType, and date)
     useEffect(() => {
         const duration = calculateDuration(startDate, endDate);
         if (endDate && destination && travelerType && duration > 0) {
@@ -148,6 +151,7 @@ function Trip() {
         }
     };
 
+    // Pre-fill the form with the trip data when editing a trip
     const handleEditTrip = (trip) => {
         setEditingTripId(trip.id);
         setTripName(trip.trip_name);
@@ -157,8 +161,8 @@ function Trip() {
         setTotalBudget(trip.total_budget);
         setTravelerType(trip.traveler_type || "");
         setValidationError("");
-        setCollaborators([]);
-        setInitialCollaboratorsLoaded(false);
+        setTripmate([]);
+        setInitialTripmateLoaded(false);
     };
 
     const resetForm = () => {
@@ -173,11 +177,11 @@ function Trip() {
         setValidationError("");
         setError("");
         setLoadingRecommendation(false);
-        setCollaborators([]);
-        setInitialCollaboratorsLoaded(false);
+        setTripmate([]);
+        setInitialTripmateLoaded(false);
     };
 
-    const handleSubmit = async (e, collaborators = []) => {
+    const handleSubmit = async (e, tripmate = []) => {
         e.preventDefault();
         setValidationError("");
         setError("");
@@ -197,6 +201,7 @@ function Trip() {
 
         const duration = calculateDuration(startDate, endDate);
 
+        // Check if budget is within recommended range
         if (endDate && recommendedBudget) {
             const maxAllowed = recommendedBudget.total_budget * 1.5;
             const minAllowed = recommendedBudget.total_budget * 0.5;
@@ -248,7 +253,7 @@ function Trip() {
             if (editingTripId) {
                 try {
                     response = await api.put(`/api/trips/${editingTripId}/update/`, tripData);
-                    await updateCollaborators(editingTripId, collaborators);
+                    await updateTripmate(editingTripId, tripmate);
                     setTrips(trips.map((trip) => (trip.id === editingTripId ? response.data : trip)));
                     resetForm();
                 } catch (error) {
@@ -262,7 +267,7 @@ function Trip() {
                 }
             } else {
                 response = await api.post("/api/trips/", tripData);
-                await updateCollaborators(response.data.id, collaborators);
+                await updateTripmate(response.data.id, tripmate);
                 setTrips([...trips, response.data]);
                 resetForm();
             }
@@ -272,35 +277,37 @@ function Trip() {
         }
     };
       
-    const updateCollaborators = async (tripId, newCollaborators) => {
+    const updateTripmate = async (tripId, newTripmate) => {
         try {
-            const currentResponse = await api.get(`/api/trips/${tripId}/collaborators/`);
-            const currentCollaborators = currentResponse.data.data?.collaborators || [];
+            const currentResponse = await api.get(`/api/trips/${tripId}/tripmate/`);
+            const currentTripmate = currentResponse.data.data?.tripmate || [];
             
-            const currentEmails = currentCollaborators.map(c => c.email);
-            const newEmails = newCollaborators.map(c => c.email);
+            const currentEmails = currentTripmate.map(c => c.email);
+            const newEmails = newTripmate.map(c => c.email);
             
-            for (const email of currentEmails) {
-                if (!newEmails.includes(email)) {
-                    await api.delete(`/api/trips/${tripId}/collaborators/`, {
-                        data: { email }
+      
+            for (const tripmate of currentTripmate) {
+                if (!newEmails.includes(tripmate.email)) {
+                    await api.delete(`/api/trips/${tripId}/tripmate/`, {
+                        data: { email: tripmate.email }
                     });
                 }
             }
             
-            for (const collaborator of newCollaborators) {
-                if (!currentEmails.includes(collaborator.email)) {
+           
+            for (const tripmate of newTripmate) {
+                if (!currentEmails.includes(tripmate.email)) {
                     try {
-                        await api.post(`/api/trips/${tripId}/collaborators/`, {
-                            email: collaborator.email
+                        await api.post(`/api/trips/${tripId}/tripmate/`, {
+                            email: tripmate.email
                         });
                     } catch (err) {
-                        console.error("Failed to add collaborator:", err);
+                        console.error("Failed to add tripmate:", err);
                     }
                 }
             }
         } catch (err) {
-            console.error("Error updating collaborators:", err);
+            console.error("Error updating tripmate:", err);
         }
     };
           
@@ -328,9 +335,9 @@ function Trip() {
                             recommendedBudget={recommendedBudget}
                             loadingRecommendation={loadingRecommendation}
                             applyRecommendedBudget={applyRecommendedBudget}
-                            collaborators={collaborators}
-                            loadingCollaborators={loadingCollaborators}
-                            setCollaborators={setCollaborators}
+                            tripmate={tripmate}
+                            loadingTripmate={loadingTripmate}
+                            setTripmate={setTripmate}
                         />
                         <TripList
                             trips={trips}

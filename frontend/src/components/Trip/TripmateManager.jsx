@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import api from "../api";
-import "../styles/CollaboratorManager.css";
+import api from "../../api";
+import "../../styles/Trip/TripmateManager.css";
 
-function CollaboratorManager({ tripId, initialCollaborators = [], onSave, isModal = false }) {
+function TripmateManager({ tripId, initialTripmate = [], onSave, isModal = false }) {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState(null);
-  const [collaborators, setCollaborators] = useState(initialCollaborators);
+  const [tripmate, setTripmate] = useState(initialTripmate);
   const [isCheckingUser, setIsCheckingUser] = useState(false);
 
-  const handleAddCollaborator = async () => {
+  const handleAddTripmate = async () => {
     if (!email.trim()) {
       setMessage({ text: "Please enter a valid email", type: "error" });
       return;
@@ -26,34 +26,34 @@ function CollaboratorManager({ tripId, initialCollaborators = [], onSave, isModa
       }
 
       if (!tripId) {
-        if (collaborators.some(c => c.email.toLowerCase() === email.toLowerCase())) {
-          setMessage({ text: "User is already a collaborator", type: "error" });
+        if (tripmate.some(c => c.email.toLowerCase() === email.toLowerCase())) {
+          setMessage({ text: "User is already a tripmate", type: "error" });
           return;
         }
         
-        const newCollaborator = {
+        const newTripmate = {
           id: `temp-${Date.now()}`,
           email,
           first_name: userCheck.data.first_name,
           last_name: userCheck.data.last_name
         };
         
-        setCollaborators([...collaborators, newCollaborator]);
+        setTripmate([...tripmate, newTripmate]);
         setEmail('');
         setMessage({ 
-          text: "Collaborator will be added when trip is saved", 
+          text: "tripmate will be added when trip is saved", 
           type: "success" 
         });
         return;
       }
 
-      const response = await api.post(`/api/trips/${tripId}/collaborators/`, { email });
-      setCollaborators([...collaborators, response.data.user]);
+      const response = await api.post(`/api/trips/${tripId}/tripmate/`, { email });
+      setTripmate([...tripmate, response.data.user]);
       setEmail('');
-      setMessage({ text: "Collaborator added!", type: "success" });
+      setMessage({ text: "Tripmate added!", type: "success" });
     } catch (err) {
       setMessage({
-        text: err.response?.data?.detail || "Failed to add collaborator",
+        text: err.response?.data?.detail || "Failed to add tripmate",
         type: "error"
       });
     } finally {
@@ -61,49 +61,52 @@ function CollaboratorManager({ tripId, initialCollaborators = [], onSave, isModa
     }
   };
 
-  const handleRemoveCollaborator = async (userId) => {
+  const handleRemoveTripmate = async (userId) => {
     if (!tripId) {
-      setCollaborators(collaborators.filter(c => c.id !== userId));
-      return;
+        // For new trips (not saved yet)
+        const updatedTripmate = tripmate.filter(c => c.id !== userId);
+        setTripmate(updatedTripmate);
+        return;
     }
 
     try {
-      const collaborator = collaborators.find(c => c.id === userId);
-      if (!collaborator) return;
+        const tripmateToRemove = tripmate.find(c => c.id === userId);
+        if (!tripmateToRemove) return;
 
-      await api.delete(`/api/trips/${tripId}/collaborators/`, {
-        data: { email: collaborator.email }
-      });
-      
-      setCollaborators(collaborators.filter(c => c.id !== userId));
-      setMessage({ text: "Collaborator removed", type: "success" });
+        await api.delete(`/api/trips/${tripId}/tripmate/`, {
+            data: { email: tripmateToRemove.email }
+        });
+        
+        const updatedTripmate = tripmate.filter(c => c.id !== userId);
+        setTripmate(updatedTripmate);
+        setMessage({ text: "Tripmate removed", type: "success" });
     } catch (err) {
-      setMessage({
-        text: err.response?.data?.detail || "Failed to remove collaborator",
-        type: "error"
-      });
+        setMessage({
+            text: err.response?.data?.detail || "Failed to remove tripmate",
+            type: "error"
+        });
     }
-  };
+};
 
   const handleSave = () => {
     if (onSave) {
-      onSave(collaborators);
+      onSave(tripmate);
     }
   };
 
   return (
-    <div className={`collaborator-container ${isModal ? 'modal-view' : ''}`}>
-      <div className="collaborator-left">
-        <div className="collaborators-section">
-          <h3>Collaborators</h3>
-          {collaborators.length > 0 ? (
-            <ul className="collaborator-list">
-              {collaborators.map((user) => (
+    <div className={`tripmate-container ${isModal ? 'modal-view' : ''}`}>
+      <div className="tripmate-left">
+        <div className="tripmate-section">
+          <h3>Tripmate</h3>
+          {tripmate.length > 0 ? (
+            <ul className="tripmate-list">
+              {tripmate.map((user) => (
                 <li key={user.id}>
                   <div>
                     <strong>{user.first_name} {user.last_name}</strong>
                     <button 
-                      onClick={() => handleRemoveCollaborator(user.id)}
+                      onClick={() => handleRemoveTripmate(user.id)}
                       className="remove-button"
                     >
                       Remove
@@ -114,28 +117,28 @@ function CollaboratorManager({ tripId, initialCollaborators = [], onSave, isModa
               ))}
             </ul>
           ) : (
-            <p>No collaborators have been added</p>
+            <p>No tripmate have been added</p>
           )}
         </div>
       </div>
 
-      <div className="collaborator-right">
-        <div className="add-collaborator-form">
-          <h4>Add New Collaborator</h4>
+      <div className="tripmate-right">
+        <div className="add-tripmate-form">
+          <h4>Add New Tripmate</h4>
           <div className="form-group">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter collaborator's email"
+              placeholder="Enter tripmate's email"
               className="email-input"
             />
             <button
-              onClick={handleAddCollaborator}
+              onClick={handleAddTripmate}
               className="add-button"
               disabled={isCheckingUser}
             >
-              {isCheckingUser ? "Checking..." : "Add Collaborator"}
+              {isCheckingUser ? "Checking..." : "Add Tripmate"}
             </button>
           </div>
           {message && (
@@ -146,7 +149,7 @@ function CollaboratorManager({ tripId, initialCollaborators = [], onSave, isModa
         {isModal && (
           <div className="modal-actions">
             <button onClick={handleSave} className="save-button">
-              Save Collaborators
+              Save Tripmate
             </button>
           </div>
         )}
@@ -155,4 +158,4 @@ function CollaboratorManager({ tripId, initialCollaborators = [], onSave, isModa
   );
 }
 
-export default CollaboratorManager;
+export default TripmateManager;

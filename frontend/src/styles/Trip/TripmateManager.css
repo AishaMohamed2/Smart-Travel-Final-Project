@@ -1,16 +1,16 @@
-/* CollaboratorManager.css - Vertical Layout */
-.collaborator-container {
+
+.tripmate-container {
     display: flex;
     flex-direction: column;
     gap: 20px;
     width: 100%;
 }
 
-.collaborator-left, .collaborator-right {
+.tripmate-left, .tripmate-right {
     width: 100%;
 }
 
-.collaborators-section {
+.tripmate-section {
     background-color: #ffffff;
     padding: 20px;
     border-radius: 8px;
@@ -18,31 +18,31 @@
     margin-bottom: 20px;
 }
 
-.collaborators-section h3 {
+.tripmate-section h3 {
     color: #0f172a;
     font-size: 1.25rem;
     margin-bottom: 15px;
     font-weight: 600;
 }
 
-.collaborator-list {
+.tripmate-list {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.collaborator-list li {
+.tripmate-list li {
     padding: 15px 0;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
 }
 
-.collaborator-list li:last-child {
+.tripmate-list li:last-child {
     border-bottom: none;
 }
 
-.collaborator-info {
+.tripmate-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -55,21 +55,21 @@
     font-size: 0.9rem;
 }
 
-.add-collaborator-form {
+.add-tripmate-form {
     background-color: #ffffff;
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
 }
 
-.add-collaborator-form h4 {
+.add-tripmate-form h4 {
     color: #0f172a;
     font-size: 1.1rem;
     margin-bottom: 15px;
     font-weight: 600;
 }
 
-.collaborator-form-group {
+.tripmate-form-group {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -170,3 +170,71 @@
     justify-content: flex-end;
 }
 
+.tripmate-section {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.tripmate-list {
+  margin-bottom: 15px;
+}
+
+.tripmate-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.remove-tripmate {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.remove-tripmate:hover {
+  background-color: #fecaca;
+}
+
+.add-tripmate-form {
+  display: flex;
+  gap: 10px;
+}
+
+.add-tripmate-form input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
+.add-tripmate-form button {
+  padding: 8px 15px;
+  background-color: #0f172a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-tripmate-btn{
+    background-color: #404d6c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background 0.2s;
+  }
+
+
+.add-tripmate-btn:hover {
+    background-color: #1e293b;
+}

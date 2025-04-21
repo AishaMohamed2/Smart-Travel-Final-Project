@@ -1,3 +1,10 @@
+/* Title: react-living-app
+Author: djirdehh
+Date: August 2017
+Code version: n/a
+Availability: https://github.com/djirdehh/react-living-app
+Currency copied from here as api was unreliable */
+
 const currencies = [
     { code: 'USD', name: 'United States Dollar', symbol: '$' },
     { code: 'EUR', name: 'Euro', symbol: '€' },

@@ -17,14 +17,13 @@ body {
   position: relative;
 }
 
-/* Main Layout Area */
 .main-layout {
   display: flex;
   flex: 1;
-  padding-bottom: 60px; /* Space for footer */
+  padding-bottom: 60px;
 }
 
-/* Content Area Styles */
+
 .content-area {
   flex: 1;
   padding: 2rem;
@@ -32,7 +31,7 @@ body {
   overflow-y: auto;
 }
 
-/* Footer Styles */
+
 .app-footer {
   background-color: #1e293b;
   color: white;

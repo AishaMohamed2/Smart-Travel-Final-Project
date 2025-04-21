@@ -13,7 +13,6 @@ function TripList({ trips, handleEditTrip, handleDeleteTrip }) {
     }
   };
 
-  // Get unique traveler types from trips
   const travelerTypes = ["All", ...new Set(trips.map((trip) => trip.traveler_type))];
 
   // Filter trips based on selected traveler type
@@ -26,7 +25,7 @@ function TripList({ trips, handleEditTrip, handleDeleteTrip }) {
     <div className="trip-list">
       <h3>Your Trips</h3>
 
-      {/* Traveler Type Filter Dropdown */}
+
       <div className="traveler-type-filter">
         <label htmlFor="travelerType">Filter by Traveler Type:</label>
         <select
@@ -42,7 +41,7 @@ function TripList({ trips, handleEditTrip, handleDeleteTrip }) {
         </select>
       </div>
 
-      {/* Trip List */}
+
       {filteredTrips.length === 0 ? (
         <p className="no-trips-message">No trips found</p>
       ) : (
