@@ -3,7 +3,7 @@ Author: <Tech with Tim>
 Date: <26/03/2024>
 Code version: <n/a>
 Availability: <https://www.youtube.com/watch?v=c-QsfbznSXI> 
-Serilizer for user inspired by this video but i wanted to use email so did a custom user
+Serilizer for user inspired by this video
 """
 
 
@@ -120,10 +120,16 @@ class ExpenseSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
-            # Set the original currency to the user's currency
+            # Set to current user's currency when creating
             validated_data['original_currency'] = request.user.currency
-        
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+             # Update to current user's currency when editing
+            validated_data['original_currency'] = request.user.currency
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -143,7 +149,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
                     data['original_currency'] = instance.original_currency
                     data['amount'] = converted_amount
                 except Exception as e:
-                    # If conversion fails, keep original amount
+                     # If conversion fails, keep original amount
                     pass
                 
         return data

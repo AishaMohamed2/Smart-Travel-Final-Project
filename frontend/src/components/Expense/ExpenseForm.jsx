@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../../styles/Expense/ExpenseForm.css";
 import LoadingIndicator from "../LoadingIndicator"; 
+import { useCurrency } from '../../utils/useCurrency'; 
 
 function ExpenseForm({
   editingExpenseId,
@@ -16,8 +17,12 @@ function ExpenseForm({
   setDescription,
   setSelectedTrip,
   handleSubmit,
-  error
+  error,
+  originalCurrency
 }) {
+
+  const { currency } = useCurrency();
+
   // Get the selected trip details ID
   const selectedTripDetails = trips.find(trip => trip.id === Number(selectedTrip));
 
@@ -40,6 +45,11 @@ function ExpenseForm({
   return (
     <div className="expense-form">
       <h2>{editingExpenseId ? "Edit Expense" : "Add Expense"}</h2>
+      {editingExpenseId && originalCurrency && (
+        <div className="currency-notice">
+          <p>Expense will be updated to {currency.code} (originally {originalCurrency})</p>
+        </div>
+      )}
       <form onSubmit={handleFormSubmit}>
         <div className="form-group">
           <label>Trip</label>
@@ -58,7 +68,7 @@ function ExpenseForm({
         </div>
 
         <div className="form-group">
-          <label>Amount</label>
+          <label>Amount ({currency.code})</label>
           <input 
             type="number" 
             value={amount} 

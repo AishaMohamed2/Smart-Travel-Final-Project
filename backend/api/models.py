@@ -63,7 +63,7 @@ class CustomUser(AbstractBaseUser):
 # TRIP MODEL 
 class Trip(models.Model):
     """
-    Can be shared with other users (tripmates) for collaborative planning.
+    Can be shared with other users (tripmates) for collaborative trips.
     """
     TRAVELER_TYPES = [
         ("luxury", "Luxury"),

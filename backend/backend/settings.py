@@ -118,7 +118,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'smarttraveldatabase',  
         'USER': 'postgres',  
-        'PASSWORD': 'DatabasePassword',  
+        'PASSWORD': '',  
         'HOST': 'localhost',  
         'PORT': '5432',  
     }

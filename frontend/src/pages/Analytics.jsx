@@ -169,7 +169,7 @@ function Analytics() {
     }
 
 
-    // Sort dates chronologically for proper line chart
+    // Sort dates for proper line chart
     const sortedDates = Object.keys(dailyData).sort((a, b) => new Date(a) - new Date(b));
     const amounts = sortedDates.map(date => dailyData[date]);
     

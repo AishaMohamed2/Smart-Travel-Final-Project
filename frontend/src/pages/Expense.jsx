@@ -19,7 +19,7 @@ function Expense() {
   const [selectedTrip, setSelectedTrip] = useState("");
   const [currentTrip, setCurrentTrip] = useState(null);
   const [totalSpent, setTotalSpent] = useState(0);
-  const { formatAmount } = useCurrency();
+  const { formatAmount, currency } = useCurrency();
 
 
   // Fetching trips and expenses data from API 
@@ -75,7 +75,6 @@ function Expense() {
     e.preventDefault();
     setError("");
 
-
     if (!selectedTrip) {
       setError("Please select a valid trip.");
       return;
@@ -89,7 +88,6 @@ function Expense() {
       return;
     }
 
-
     if (!amount || isNaN(amount)) {
       setError("Please enter a valid amount.");
       return;
@@ -101,13 +99,13 @@ function Expense() {
     }
 
     try {
-
       const expenseData = {
         trip: tripId,
         amount: parseFloat(amount),
         date,
         category,
         description,
+        original_currency: currency.code
       };
 
       let updatedExpenses = [];
@@ -214,6 +212,11 @@ function Expense() {
               setSelectedTrip={handleTripChange}
               handleSubmit={handleSubmit}
               error={error}
+              originalCurrency={
+                editingExpenseId 
+                  ? expenses.find(e => e.id === editingExpenseId)?.original_currency 
+                  : null
+              }
             />
             <ExpenseList
               expenses={expenses.filter(expense => 

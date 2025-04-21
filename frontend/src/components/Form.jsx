@@ -88,13 +88,13 @@ function Form({ route, method }) {
                 if (method === "register") {
                     if (error.response.status === 400) {
                         if (error.response.data.email) {
-                            // Email already exists
+                           
                             setApiError("An account with this email already exists. Please log in.");
                         } else if (error.response.data.password) {
-                            // Password validation failed
+                           
                             setApiError("Password requirements not met: " + error.response.data.password.join(' '));
                         } else {
-                            // Other registration errors
+                           
                             setApiError("Registration failed. Please check your information.");
                         }
                     } else {

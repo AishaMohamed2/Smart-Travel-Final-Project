@@ -48,7 +48,7 @@ def calculate_trip_analytics(trip):
     duration = (trip.end_date - trip.start_date).days + 1
     
 
-    # Groups expenses by category (e.g., food, transport) and adds up how much was spent in each.
+    # Groups expenses by category and adds up how much was spent in each.
     category_data = expenses.values('category').annotate(total=Sum('amount'))
     category_dict = {
         item['category']: float(item['total'])
@@ -71,7 +71,7 @@ def calculate_trip_analytics(trip):
         'total_spent': float(total_spent),
         'remaining_budget': float(trip.total_budget - total_spent),
         'daily_average': float(total_spent) / duration if duration > 0 else 0,
-        'category_spending': category_dict,  # Changed from 'categories' to 'category_spending'
+        'category_spending': category_dict, 
         'daily_spending': _get_daily_spending(trip)
     }
 
@@ -87,21 +87,21 @@ def _get_daily_spending(trip):
     return daily_data
 
 # CORE USER VIEWS
-#REUSED FROM Tech with Tim (LINE 91-95)
+#REUSED FROM Tech with Tim (LINE 91-95) and followed same format throughout
 class CreateUserView(generics.CreateAPIView):
-    """Endpoint for creating new user accounts"""
+    #Endpoint for creating new user accounts
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
-        """Handle password hashing during user creation"""
+        #Handle password hashing during user creation
         user = serializer.save()
         user.set_password(serializer.validated_data['password']) #hashed passwored security 
         user.save()
 
 class UserDetailView(RetrieveAPIView):
-    """Endpoint for retrieving authenticated user's details"""
+    #Endpoint for retrieving authenticated user's details
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
@@ -159,7 +159,7 @@ class UserUpdateView(UpdateAPIView):
         return Response(serializer.data)
     
 class UserDeleteView(DestroyAPIView):
-    """Endpoint for account deletion"""
+    #Endpoint for account deletion
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
@@ -204,12 +204,12 @@ class TripListCreate(generics.ListCreateAPIView):
         return context
     
 class TripUpdateView(generics.UpdateAPIView):
-    """Endpoint for updating existing trips"""
+    #Endpoint for updating existing trips
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Ensure users can only update their own trips"""
+        #Ensure users can only update their own trips
         return Trip.objects.filter(user=self.request.user)
 
     def update(self, request, *args, **kwargs):
@@ -259,7 +259,7 @@ class TripUpdateView(generics.UpdateAPIView):
                         
             except Exception as e:
                 logger.error(f"Budget validation error: {str(e)}")
-                # Allow update if validation fails
+                
             
             # Perform the update
             serializer = self.get_serializer(instance, data=request.data, partial=True)
@@ -276,12 +276,12 @@ class TripUpdateView(generics.UpdateAPIView):
             )
         
 class TripDeleteView(generics.DestroyAPIView):
-    """Endpoint for deleting trips"""
+    #Endpoint for deleting trips
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Ensure users can only delete their own trips"""
+        #Ensure users can only delete their own trips
         return Trip.objects.filter(user=self.request.user)
 
     def delete(self, request, *args, **kwargs):
@@ -311,16 +311,14 @@ class ExpenseListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Only include those related to trips where the current user is
-          either the user or the tripmate. """
-
         return Expense.objects.filter(
+             #Only include those related to trips where the current user is either the user or the tripmate. 
             Q(trip__user=self.request.user) | 
             Q(trip__tripmate=self.request.user)
         ).distinct()
 
     def perform_create(self, serializer):
-        """Checks if the user has permission to add expenses to the trip. """
+        #Checks if the user has permission to add expenses to the trip. 
         trip = serializer.validated_data['trip']
         if not trip.is_user_allowed(self.request.user):
             raise serializers.ValidationError("You can only add expenses to trips you own or collaborate on.")
@@ -341,8 +339,9 @@ class ExpenseUpdateView(generics.UpdateAPIView):
             Q(trip__user=self.request.user) | 
             Q(trip__tripmate=self.request.user)
         ).distinct()
-    """checks if the user is allowed to modify the expense"""
+
     def perform_update(self, serializer):
+         #checks if the user is allowed to modify the expense
         trip = serializer.validated_data['trip']
         if not trip.is_user_allowed(self.request.user):
             raise serializers.ValidationError(
@@ -356,19 +355,19 @@ class ExpenseUpdateView(generics.UpdateAPIView):
         return context
 
 class ExpenseDeleteView(generics.DestroyAPIView):
-    """Endpoint for deleting expenses"""
+    #Endpoint for deleting expenses
     serializer_class = ExpenseSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Allow deletion for trip owners and tripmate"""
+        #Allow deletion for trip owners and tripmate
         return Expense.objects.filter(
             Q(trip__user=self.request.user) | 
             Q(trip__tripmate=self.request.user)
         ).distinct()
 
     def perform_destroy(self, instance):
-        """checks if the user is allowed to delete the expense"""
+        #checks if the user is allowed to delete the expense
         if not instance.trip.is_user_allowed(self.request.user):
             raise serializers.ValidationError(
                 "You can only delete expenses for trips you own or collaborate on."
@@ -377,7 +376,7 @@ class ExpenseDeleteView(generics.DestroyAPIView):
         
 # ANALYTICS VIEWS 
 class AllTripsAnalyticsView(APIView):
-    """Endpoint for aggregated analytics across all trips"""
+    #Endpoint for aggregated analytics across all trips
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -519,7 +518,7 @@ class AllTripsAnalyticsView(APIView):
             return None
         
 class TripAnalyticsView(APIView):
-    """Endpoint for detailed analytics of a specific trip"""
+    #Endpoint for detailed analytics of a specific trip
     permission_classes = [IsAuthenticated]
 
     def get(self, request, trip_id):
@@ -633,9 +632,9 @@ class BudgetRecommendationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """
-        Get budget recommendations for a trip to a specific city based on traveler type
-        """
+        
+        #Get budget recommendations for a trip to a specific city based on traveler type
+        
         try:
             city = request.data.get('city')
             traveler_type = request.data.get('traveler_type', 'medium')
@@ -711,7 +710,7 @@ class BudgetRecommendationView(APIView):
             )
 
     def _get_city_cost_data(self, city):
-        """Fetch cost of living data from JSON data"""
+        #Fetch cost of living data from JSON data
         # Try to find the city in data 
         city_lower = city.lower()
         
@@ -728,7 +727,7 @@ class BudgetRecommendationView(APIView):
         return None
 
     def _convert_currency(self, costs, from_currency, to_currency):
-        """Convert costs to user's preferred currency"""
+        #Convert costs to user's preferred currency
         if from_currency == to_currency:
             return costs
 
@@ -814,7 +813,7 @@ class TripTripmateView(APIView):
             return Response({'detail': 'User with this email does not exist'}, status=404)
 
     def delete(self, request, trip_id):
-        """Allow the trip owner to remove a tripmate by providing their email"""
+        #Allow the trip owner to remove a tripmate by providing their email
         trip = get_object_or_404(Trip, id=trip_id)
 
         if request.user != trip.user:
@@ -832,7 +831,7 @@ class TripTripmateView(APIView):
             return Response({'detail': 'User not found'}, status=404)
         
 class UserVerificationView(APIView):
-    """Allows an authenticated user to verify if another user exists by their email for tripmate"""
+    #Allows an authenticated user to verify if another user exists by their email for tripmate
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

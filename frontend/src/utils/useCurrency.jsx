@@ -5,7 +5,7 @@ import currencies from '../data/currencies';
 export const useCurrency = () => {
   const { user } = useContext(UserContext);
   
-  // Get full currency info with fallback to 'GBP' then first available currency
+  // Get full currency info fallback to 'GBP' then first available currency
   const getCurrencyInfo = () => {
     return currencies.find(c => c.code === (user?.currency || 'GBP')) || currencies[0];
   };

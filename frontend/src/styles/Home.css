@@ -204,38 +204,3 @@
   font-size: 20px;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .budget-summary {
-    flex-direction: column;
-  }
-  
-  .trip-cards {
-    flex-direction: column;
-  }
-  
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  
-  .settings-circle-btn {
-    position: relative;
-    right: auto;
-    top: auto;
-    margin-top: 15px;
-    align-self: flex-end;
-  }
-}
-
-@media (max-width: 480px) {
-  .main-content {
-    padding: 15px;
-  }
-  
-  .recent-transactions table {
-    display: block;
-    overflow-x: auto;
-  }
-}

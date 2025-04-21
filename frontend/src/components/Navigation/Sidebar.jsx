@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 
 function Sidebar() {
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Added the state variable
+  const [isLoggedIn, setIsLoggedIn] = useState(false); 
 
   useEffect(() => {
       const token = localStorage.getItem(ACCESS_TOKEN);

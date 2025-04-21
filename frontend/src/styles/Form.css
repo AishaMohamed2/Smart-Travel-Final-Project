@@ -8,7 +8,7 @@ html, body {
   font-family: "Inter", sans-serif;
 }
 
-/* Logo styling */
+
 .logo {
   position: absolute;
   top: -60px;
@@ -17,7 +17,7 @@ html, body {
   height: auto;
 }
 
-/* Split Container */
+
 .login-container {
   display: flex;
   height: 100vh; 
@@ -45,7 +45,7 @@ html, body {
   height: 100vh; 
 }
 
-/* Login Form Styling */
+
 .form-container {
   background-color: white;
   padding: 70px; 
@@ -56,7 +56,7 @@ html, body {
   font-size: 25px; 
 }
 
-/* Input Fields */
+
 .form-input {
   width: 100%;
   padding: 16px;
@@ -102,13 +102,13 @@ html, body {
   text-decoration: underline;
 }
 
-/* Sign-up Link */
+
 .signup-link {
   font-size: 18px;
   margin-top: 20px;
 }
 
-/* API Error Message */
+
 .api-error {
   color: red;
   background-color: #ffe6e6;
@@ -119,13 +119,13 @@ html, body {
   margin-bottom: 15px;
 }
 
-/* Error Input Field */
+
 .form-input.error {
   border: 2px solid red;
   background-color: #ffe6e6;
 }
 
-/* Error Message */
+
 .error-text {
   color: red;
   font-size: 14px;
@@ -134,7 +134,7 @@ html, body {
   text-align: left;
 }
 
-/* Input Group */
+
 .input-group {
   margin-bottom: 15px;
 }

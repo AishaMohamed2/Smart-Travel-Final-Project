@@ -24,11 +24,11 @@ function Layout() {
   return (
     <UserContext.Provider value={{ user, setUser }}>
       <div className="app-container">
-        {/* Main Content Area */}
+
         <div className="main-layout">
           <Sidebar />
           <main className="content-area">
-            <Outlet /> {/* This will render child routes with access to UserContext */}
+            <Outlet /> 
           </main>
         </div>
 
